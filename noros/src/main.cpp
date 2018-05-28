@@ -29,62 +29,96 @@ std::vector<long> euroc_timestamp_storage;
 
 int main(int argc, char** argv)
 {
-    if (argc != 2) 
+    if (argc != 1) 
     {
-        std::cerr << "Usage: ./vi_executor path/to/dataset/" << std::endl;
+        std::cerr << "Usage: ./vi_executor" << std::endl;
         return 0;
     }
 
-    //const std::string dataset_path = "/home/gingerli/Datasets/MH_04_difficult/mav0/";
-    const std::string dataset_path = argv[1];
-    const std::string config_path = "";
+    int dataset_num;
+    std::cout << "How many sequences to be processed? ";
+    std::cin >> dataset_num;
 
-    const std::string euroc_dataset_path = dataset_path + "/cam0/data.csv";
-    const std::string euroc_imu_path = dataset_path + "/imu0/data.csv";
+    std::vector<std::string> datasets(dataset_num);
 
-    const std::string euroc_groundtruth_path = dataset_path + "state_groundtruth_estimate0/data.csv";
-
-    readEurocImuData(euroc_imu_path);
-
-    readEurocTimestamp(euroc_dataset_path);
-
-    readGroundtruth(euroc_groundtruth_path);
-
-    vi_system = new VISystem();
-
-    vi_system->init();
-
-    read_imu_thread = std::thread(imuLoop);
-
-    for (size_t i = 0; i < euroc_timestamp_storage.size(); ++i)
+    int idx = 0;
+    while (idx < dataset_num)
     {
-        const std::string img_path(dataset_path + "/cam0/data/" + std::to_string(euroc_timestamp_storage[i]) + ".png");
-        
-        //std::cout << "Image path: " << img_path << "\n";
-        
-        cv::Mat input_frame = cv::imread(img_path, CV_LOAD_IMAGE_UNCHANGED);
-
-        if (input_frame.cols == 0 || input_frame.rows == 0) continue;
-        
-        //std::cout << "Image w: " << input_frame.cols << " h: " << input_frame.rows << "\n";
-
-        vi_system->processFrame(euroc_timestamp_storage[i] / pow(10, 9), input_frame);
-
-        cv::imshow("frame", input_frame);
-
-        int key = cv::waitKey(1);
-
-        if (key == 'q')
-            break;
+        printf("Enter dataset %d path\n", idx + 1);
+        std::cin >> datasets[idx];
+        idx++;
     }
 
-    cv::waitKey(0);
+    idx = 0;
 
-    cv::destroyWindow("frame");
+    while (idx < dataset_num)
+    {
+        const std::string dataset_path = datasets[idx];
 
-    read_imu_thread.join();
+        const std::string config_path = "";
 
-    printf("[main] read_imu_thread stops\n");
+        const std::string euroc_dataset_path = dataset_path + "/cam0/data.csv";
+        const std::string euroc_imu_path = dataset_path + "/imu0/data.csv";
+
+        const std::string euroc_groundtruth_path = dataset_path + "state_groundtruth_estimate0/data.csv";
+
+        imu_storage.clear();
+
+        euroc_timestamp_storage.clear();
+
+        readEurocImuData(euroc_imu_path);
+
+        readEurocTimestamp(euroc_dataset_path);
+
+        readGroundtruth(euroc_groundtruth_path);
+
+        if (!vi_system)
+        {
+            vi_system = new VISystem();
+
+            vi_system->init();
+
+        }
+
+        read_imu_thread = std::thread(imuLoop);
+
+        for (size_t i = 0; i < euroc_timestamp_storage.size(); ++i)
+        {
+            const std::string img_path(dataset_path + "/cam0/data/" + std::to_string(euroc_timestamp_storage[i]) + ".png");
+            
+            //std::cout << "Image path: " << img_path << "\n";
+            
+            cv::Mat input_frame = cv::imread(img_path, CV_LOAD_IMAGE_UNCHANGED);
+
+            if (input_frame.cols == 0 || input_frame.rows == 0) continue;
+            
+            //std::cout << "Image w: " << input_frame.cols << " h: " << input_frame.rows << "\n";
+
+            vi_system->processFrame(euroc_timestamp_storage[i] / pow(10, 9), input_frame);
+
+            cv::imshow("frame", input_frame);
+
+            int key = cv::waitKey(1);
+
+            if (key == 'q')
+                break;
+        }
+
+        int key = cv::waitKey(0);
+
+        if (key == 'q')
+        {
+            cv::destroyWindow("frame");
+            break;
+        }
+
+        read_imu_thread.join();
+
+        printf("[main] read_imu_thread stops\n");
+
+        idx++;
+
+    }
 
     vi_system->quit();
 

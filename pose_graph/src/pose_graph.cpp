@@ -311,6 +311,17 @@ void PoseGraph::loadKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop, VIEstimato
     pose_stamped.pose.orientation.w = Q.w();
     base_path.poses.push_back(pose_stamped);
     base_path.header = pose_stamped.header;
+#else 
+    POSE_MSG pose_msg;
+    pose_msg.timestamp = cur_kf->time_stamp;
+    pose_msg.position_x = P.x();
+    pose_msg.position_y = P.y();
+    pose_msg.position_z = P.z();
+    pose_msg.orientation_x = Q.x();
+    pose_msg.orientation_y = Q.y();
+    pose_msg.orientation_z = Q.z();
+    pose_msg.orientation_w = Q.w();
+    base_path.push_back(pose_msg);
 #endif
     //draw local connection
     if (SHOW_S_EDGE)
