@@ -73,6 +73,11 @@ void VISystem::init()
         relocalizer->setVIEstimator(vi_estimator);
         relocalizer->setVisualizer(visualizer);
 
+        if (LOOP_CLOSURE)
+        {
+            relocalizer->initLoopClosure();
+        }
+
         estimator_thread = std::thread(&VIEstimator::fusion, vi_estimator);
         reloc_thread = std::thread(&Relocalizer::process, relocalizer);
     }
@@ -89,6 +94,11 @@ void VISystem::quit()
 
     estimator_thread.join();
     printf("[VISystem] estimator thread stops\n");
+
+    if (SAVE_POSE_GRAPH)
+    {
+        relocalizer->savePoseGraph();
+    }
 }
 
 bool VISystem::readParameters(std::string config_file)
@@ -204,8 +214,22 @@ bool VISystem::readParameters(std::string config_file)
         LOAD_PREVIOUS_POSE_GRAPH = vi_config["load_previous_pose_graph"];
         FAST_RELOCALIZATION = vi_config["fast_relocalization"];
         m_camera = camodocal::CameraFactory::instance()->generateCameraFromYamlFile(config_file.c_str());
-        relocalizer->initLoopClosure();
     }
+
+    SAVE_POSE_GRAPH = vi_config["save_pose_graph"];
+    SAVE_NO_LOOP_PATH = vi_config["save_no_loop_path"];
+    SAVE_LOOP_PATH = vi_config["save_loop_path"];
+    DEBUG_IMAGE = vi_config["save_image"];
+    vi_config["pose_graph_save_path"] >> POSE_GRAPH_SAVE_PATH;
+    vi_config["output_path"] >> VINS_RESULT_PATH;
+    VINS_RESULT_NO_LOOP_PATH = VINS_RESULT_PATH + "/vins_result_no_loop.csv";
+    VINS_RESULT_LOOP_PATH = VINS_RESULT_PATH + "/vins_result_loop.csv";
+
+    std::ofstream fout(VINS_RESULT_NO_LOOP_PATH, std::ios::out);
+    fout.close();
+
+    fout = std::ofstream(VINS_RESULT_LOOP_PATH, std::ios::out);
+    fout.close();
 
     vi_config.release();
 

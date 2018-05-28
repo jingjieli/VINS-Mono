@@ -50,3 +50,12 @@ int FAST_RELOCALIZATION;
 int SKIP_FIRST_CNT;
 Eigen::Vector3d reloc_tic;
 Eigen::Matrix3d reloc_qic;
+
+int SAVE_POSE_GRAPH;
+int SAVE_NO_LOOP_PATH;
+int SAVE_LOOP_PATH;
+int DEBUG_IMAGE;
+std::string POSE_GRAPH_SAVE_PATH = "";
+std::string VINS_RESULT_PATH = "";
+std::string VINS_RESULT_NO_LOOP_PATH = "";
+std::string VINS_RESULT_LOOP_PATH = "";

@@ -188,7 +188,11 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop, VIEstimator
 
     if (SAVE_LOOP_PATH)
     {
+#ifndef NO_ROS
         ofstream loop_path_file(VINS_RESULT_PATH, ios::app);
+#else
+        ofstream loop_path_file(VINS_RESULT_LOOP_PATH, ios::app);
+#endif
         loop_path_file.setf(ios::fixed, ios::floatfield);
         loop_path_file.precision(0);
         loop_path_file << cur_kf->time_stamp * 1e9 << ",";
@@ -252,16 +256,7 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop, VIEstimator
 #ifndef NO_ROS
     publish();
 #else 
-    assert(visualizer_ptr != nullptr);
-    visualizer_ptr->resetPoseGraph();
-    for (int i = 1; i <= sequence_cnt; i++)
-    {
-        if (1 || i == base_sequence)
-        {
-            visualizer_ptr->updatePoseGraphPath(path[i]);
-            visualizer_ptr->updatePoseGraph(path[sequence_cnt]);
-        }
-    }
+    publishPoseGraph();
 #endif
 	m_keyframelist.unlock();
 }
@@ -680,7 +675,11 @@ void PoseGraph::updatePath(Visualizer* vis_ptr)
 
     if (SAVE_LOOP_PATH)
     {
+#ifndef NO_ROS
         ofstream loop_path_file_tmp(VINS_RESULT_PATH, ios::out);
+#else
+        ofstream loop_path_file_tmp(VINS_RESULT_LOOP_PATH, ios::out);
+#endif
         loop_path_file_tmp.close();
     }
 
@@ -736,7 +735,11 @@ void PoseGraph::updatePath(Visualizer* vis_ptr)
 
         if (SAVE_LOOP_PATH)
         {
+#ifndef NO_ROS
             ofstream loop_path_file(VINS_RESULT_PATH, ios::app);
+#else 
+            ofstream loop_path_file(VINS_RESULT_LOOP_PATH, ios::app);
+#endif
             loop_path_file.setf(ios::fixed, ios::floatfield);
             loop_path_file.precision(0);
             loop_path_file << (*it)->time_stamp * 1e9 << ",";
@@ -807,16 +810,7 @@ void PoseGraph::updatePath(Visualizer* vis_ptr)
 #ifndef NO_ROS
     publish();
 #else 
-    assert(visualizer_ptr != nullptr);
-    visualizer_ptr->resetPoseGraph();
-    for (int i = 1; i <= sequence_cnt; i++)
-    {
-        if (1 || i == base_sequence)
-        {
-            visualizer_ptr->updatePoseGraphPath(path[i]);
-            visualizer_ptr->updatePoseGraph(path[sequence_cnt]);
-        }
-    }
+    publishPoseGraph();
 #endif
     m_keyframelist.unlock();
 }
@@ -998,6 +992,10 @@ void PoseGraph::loadPoseGraph(VIEstimator* estimator_ptr)
         }
 #else 
         loadKeyFrame(keyframe, 0, estimator_ptr);
+        if (cnt % 20 == 0)
+        {
+            publishPoseGraph();
+        }
 #endif
         cnt++;
     }
@@ -1021,6 +1019,20 @@ void PoseGraph::publish()
     }
     pub_base_path.publish(base_path);
     //posegraph_visualization->publish_by(pub_pose_graph, path[sequence_cnt].header);
+}
+#else 
+void PoseGraph::publishPoseGraph()
+{
+    assert(visualizer_ptr != nullptr);
+    visualizer_ptr->resetPoseGraph();
+    for (int i = 1; i <= sequence_cnt; i++)
+    {
+        if (1 || i == base_sequence)
+        {
+            visualizer_ptr->updatePoseGraphPath(path[i]);
+            visualizer_ptr->updatePoseGraph(path[sequence_cnt]);
+        }
+    }
 }
 #endif
 

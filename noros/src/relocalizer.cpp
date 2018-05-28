@@ -80,6 +80,15 @@ void Relocalizer::readParameters(std::string file_path)
 
 }
 
+void Relocalizer::savePoseGraph()
+{
+    m_process.lock();
+    pose_graph->savePoseGraph();
+    m_process.unlock();
+    printf("save pose graph finish\nyou can set 'load_previous_pose_graph' to 1 in the config file to reuse it next time\n");
+    printf("program shutting down...\n");
+}
+
 void Relocalizer::quit()
 {
     is_running = false;

@@ -1,5 +1,7 @@
 %YAML:1.0
 
+output_path: "/home/gingerli/vins_output/"
+
 #camera calibration 
 model_type: PINHOLE
 camera_name: camera
@@ -61,7 +63,8 @@ g_norm: 9.81007     # gravity magnitude
 loop_closure: 1                    # start loop closure
 load_previous_pose_graph: 0        # load and reuse previous pose graph; load from 'pose_graph_save_path'
 fast_relocalization: 1             # useful in real-time and large project
-pose_graph_save_path: "/home/tony-ws1/output/pose_graph/" # save and load path
+save_pose_graph: 1                 # save pose graph result
+pose_graph_save_path: "/home/gingerli/vins_output/pose_graph/" # save and load path
 
 #unsynchronization parameters
 estimate_td: 0                      # online estimate time offset between camera and imu
@@ -81,3 +84,6 @@ visualization_shift_y: 0
 skip_cnt: 0
 skip_dis: 0
 skip_first_cnt: 10
+
+save_no_loop_path: 0
+save_loop_path: 0

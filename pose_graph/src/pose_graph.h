@@ -35,7 +35,9 @@ class Visualizer;
 
 #define SHOW_S_EDGE false
 #define SHOW_L_EDGE true
+#ifndef NO_ROS
 #define SAVE_LOOP_PATH true
+#endif
 
 using namespace DVision;
 using namespace DBoW2;
@@ -73,6 +75,7 @@ public:
 	void publish();
 #else 
 	void loadPoseGraph(VIEstimator* estimator_ptr);
+	void publishPoseGraph();
 #endif
 	Vector3d t_drift;
 	double yaw_drift;

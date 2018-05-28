@@ -455,6 +455,24 @@ void VIEstimator::pubOdometry(double timestamp)
 
         assert(visualizer_ptr != nullptr);
         visualizer_ptr->updateRelocPath(new_pose_msg);
+
+        // write result to file
+        ofstream foutC(VINS_RESULT_NO_LOOP_PATH, ios::app);
+        foutC.setf(ios::fixed, ios::floatfield);
+        foutC.precision(0);
+        foutC << timestamp * 1e9 << ",";
+        foutC.precision(5);
+        foutC << estimator->Ps[WINDOW_SIZE].x() << ","
+              << estimator->Ps[WINDOW_SIZE].y() << ","
+              << estimator->Ps[WINDOW_SIZE].z() << ","
+              << tmp_Q.w() << ","
+              << tmp_Q.x() << ","
+              << tmp_Q.y() << ","
+              << tmp_Q.z() << ","
+              << estimator->Vs[WINDOW_SIZE].x() << ","
+              << estimator->Vs[WINDOW_SIZE].y() << ","
+              << estimator->Vs[WINDOW_SIZE].z() << "," << endl;
+        foutC.close();
     }
 }
 

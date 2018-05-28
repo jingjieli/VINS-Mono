@@ -13,9 +13,6 @@ const int NUM_OF_CAM = 1;
 const int WINDOW_SIZE = 10;
 const int NUM_OF_F = 1000;
 extern std::vector<std::string> CAM_NAMES;
-const std::string VINS_RESULT_PATH = "";
-const std::string POSE_GRAPH_SAVE_PATH = "";
-const int DEBUG_IMAGE = 1;
 
 // ****** tracker ******
 extern int ROW;
@@ -217,3 +214,11 @@ struct Data
 };
 
 extern std::vector<Data> benchmark;
+extern int SAVE_POSE_GRAPH;
+extern int SAVE_NO_LOOP_PATH;
+extern int SAVE_LOOP_PATH;
+extern int DEBUG_IMAGE;
+extern std::string POSE_GRAPH_SAVE_PATH;
+extern std::string VINS_RESULT_PATH;
+extern std::string VINS_RESULT_NO_LOOP_PATH;
+extern std::string VINS_RESULT_LOOP_PATH;

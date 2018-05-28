@@ -51,6 +51,7 @@ public:
     void updateRelativePose(const POSE_MSG &pose_msg);
     void processVIO(const POSE_MSG &pose_msg); // process pose output by VIO
     void process();
+    void savePoseGraph();
     void quit();
 
 private:
@@ -65,7 +66,7 @@ private:
     std::queue<POSE_MSG> pose_buf;
     std::queue<Eigen::Vector3d> odometry_buf;
 
-    PoseGraph *pose_graph = nullptr;
+    PoseGraph* pose_graph = nullptr;
 
     double last_image_time = -1.0;
 
