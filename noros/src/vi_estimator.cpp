@@ -355,23 +355,23 @@ void VIEstimator::printStatistics(double t)
     std::cout << "orientation: " << estimator->Vs[WINDOW_SIZE].transpose() << std::endl;
     for (int i = 0; i < NUM_OF_CAM; i++)
     {
-        //printf("calibration result for camera %d", i);
+        printf("calibration result for camera %d", i);
         std::cout << "extirnsic tic: " << estimator->tic[i].transpose() << std::endl;
         std::cout << "extrinsic ric: " << Utility::R2ypr(estimator->ric[i]).transpose() << std::endl;
-        // FIX ME
-        // if (ESTIMATE_EXTRINSIC)
-        // {
-        //     cv::FileStorage fs(EX_CALIB_RESULT_PATH, cv::FileStorage::WRITE);
-        //     Eigen::Matrix3d eigen_R;
-        //     Eigen::Vector3d eigen_T;
-        //     eigen_R = estimator->ric[i];
-        //     eigen_T = estimator->tic[i];
-        //     cv::Mat cv_R, cv_T;
-        //     cv::eigen2cv(eigen_R, cv_R);
-        //     cv::eigen2cv(eigen_T, cv_T);
-        //     fs << "extrinsicRotation" << cv_R << "extrinsicTranslation" << cv_T;
-        //     fs.release();
-        // }
+
+        if (ESTIMATE_EXTRINSIC)
+        {
+            cv::FileStorage fs(EX_CALIB_RESULT_PATH, cv::FileStorage::WRITE);
+            Eigen::Matrix3d eigen_R;
+            Eigen::Vector3d eigen_T;
+            eigen_R = estimator->ric[i];
+            eigen_T = estimator->tic[i];
+            cv::Mat cv_R, cv_T;
+            cv::eigen2cv(eigen_R, cv_R);
+            cv::eigen2cv(eigen_T, cv_T);
+            fs << "extrinsicRotation" << cv_R << "extrinsicTranslation" << cv_T;
+            fs.release();
+        }
     }
 
     sum_of_time += t;

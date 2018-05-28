@@ -848,19 +848,27 @@ void Estimator::optimization()
     {
         ceres::LocalParameterization *local_parameterization = new PoseLocalParameterization();
         problem.AddParameterBlock(para_Ex_Pose[i], SIZE_POSE, local_parameterization);
+#ifndef NO_ROS
         if (!ESTIMATE_EXTRINSIC)
         {
-#ifndef NO_ROS
-            ROS_DEBUG("fix extinsic param");
-#endif
+            ROS_DEBUG("fixed extinsic param");
             problem.SetParameterBlockConstant(para_Ex_Pose[i]);
         }
         else
         {
-#ifndef NO_ROS
             ROS_DEBUG("estimate extinsic param");
-#endif
         }
+#else 
+        if (!ESTIMATE_EXTRINSIC)
+        {
+            printf("fixed extinsic param\n");
+            problem.SetParameterBlockConstant(para_Ex_Pose[i]);
+        }
+        else
+        {
+            printf("estimate extinsic param\n");
+        }
+#endif 
     }
     if (ESTIMATE_TD)
     {

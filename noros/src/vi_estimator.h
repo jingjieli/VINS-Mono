@@ -14,27 +14,6 @@
 
 using namespace std;
 
-// struct LINEAR_ACCELERATION
-// {
-//     double linear_acceleration_x;
-//     double linear_acceleration_y;
-//     double linear_acceleration_z;
-// };
-
-// struct ANGULAR_VELOCITY
-// {
-//     double angular_velocity_x;
-//     double angular_velocity_y;
-//     double angular_velocity_z;
-// };
-
-// struct IMU_MSG
-// {
-//     double timestamp;
-//     LINEAR_ACCELERATION linear_acceleration;
-//     ANGULAR_VELOCITY angular_velocity;
-// };
-
 class Relocalizer;
 class Visualizer;
 

@@ -144,40 +144,6 @@ bool VISystem::readParameters(std::string config_file)
     GYR_W = vi_config["gyr_w"];
     G.z() = vi_config["g_norm"];
 
-    ESTIMATE_EXTRINSIC = vi_config["estimate_extrinsic"];
-    if (ESTIMATE_EXTRINSIC == 2)
-    {
-        printf("have no prior about extrinsic param, calibrate extrinsic param\n");
-        RIC.push_back(Eigen::Matrix3d::Identity());
-        TIC.push_back(Eigen::Vector3d::Zero());
-        //EX_CALIB_RESULT_PATH = OUTPUT_PATH + "/extrinsic_parameter.csv"; // FIX ME
-    }
-    else 
-    {
-        if ( ESTIMATE_EXTRINSIC == 1)
-        {
-            printf(" Optimize extrinsic param around initial guess!\n");
-            //EX_CALIB_RESULT_PATH = OUTPUT_PATH + "/extrinsic_parameter.csv";
-        }
-        if (ESTIMATE_EXTRINSIC == 0)
-            printf(" fixed extrinsic param \n");
-
-        cv::Mat cv_R, cv_T;
-        vi_config["extrinsicRotation"] >> cv_R;
-        vi_config["extrinsicTranslation"] >> cv_T;
-        Eigen::Matrix3d eigen_R;
-        Eigen::Vector3d eigen_T;
-        cv::cv2eigen(cv_R, eigen_R);
-        cv::cv2eigen(cv_T, eigen_T);
-        Eigen::Quaterniond Q(eigen_R);
-        eigen_R = Q.normalized();
-        RIC.push_back(eigen_R);
-        TIC.push_back(eigen_T);
-        std::cout << "Extrinsic_R : " << std::endl << RIC[0] << std::endl;
-        std::cout << "Extrinsic_T : " << std::endl << TIC[0].transpose() << std::endl;
-        
-    } 
-
     INIT_DEPTH = 5.0;
     BIAS_ACC_THRESHOLD = 0.1;
     BIAS_GYR_THRESHOLD = 0.1;
@@ -187,7 +153,7 @@ bool VISystem::readParameters(std::string config_file)
     if (ESTIMATE_TD)
         printf("Unsynchronized sensors, online estimate time offset, initial td: %lf\n", TD);
     else
-        printf("Synchronized sensors, fix time offset: %lf\n", TD);
+        printf("Synchronized sensors, fixed time offset: %lf\n", TD);
 
     ROLLING_SHUTTER = vi_config["rolling_shutter"];
     if (ROLLING_SHUTTER)
@@ -230,6 +196,40 @@ bool VISystem::readParameters(std::string config_file)
 
     fout = std::ofstream(VINS_RESULT_LOOP_PATH, std::ios::out);
     fout.close();
+
+    ESTIMATE_EXTRINSIC = vi_config["estimate_extrinsic"];
+    if (ESTIMATE_EXTRINSIC == 2)
+    {
+        printf("have no prior about extrinsic param, calibrate extrinsic param\n");
+        RIC.push_back(Eigen::Matrix3d::Identity());
+        TIC.push_back(Eigen::Vector3d::Zero());
+        EX_CALIB_RESULT_PATH = VINS_RESULT_PATH + "/extrinsic_parameter.csv"; // FIX ME
+    }
+    else 
+    {
+        if (ESTIMATE_EXTRINSIC == 1)
+        {
+            printf("Optimize extrinsic param around initial guess!\n");
+            EX_CALIB_RESULT_PATH = VINS_RESULT_PATH + "/extrinsic_parameter.csv";
+        }
+        if (ESTIMATE_EXTRINSIC == 0)
+            printf("fixed extrinsic param \n");
+
+        cv::Mat cv_R, cv_T;
+        vi_config["extrinsicRotation"] >> cv_R;
+        vi_config["extrinsicTranslation"] >> cv_T;
+        Eigen::Matrix3d eigen_R;
+        Eigen::Vector3d eigen_T;
+        cv::cv2eigen(cv_R, eigen_R);
+        cv::cv2eigen(cv_T, eigen_T);
+        Eigen::Quaterniond Q(eigen_R);
+        eigen_R = Q.normalized();
+        RIC.push_back(eigen_R);
+        TIC.push_back(eigen_T);
+        std::cout << "Extrinsic_R : " << std::endl << RIC[0] << std::endl;
+        std::cout << "Extrinsic_T : " << std::endl << TIC[0].transpose() << std::endl;
+        
+    } 
 
     vi_config.release();
 
