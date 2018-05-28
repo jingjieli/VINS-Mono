@@ -40,6 +40,7 @@ void Visualizer::start()
     pangolin::Var<bool> menuShowPoints("menu.Show Points", true, true);
     pangolin::Var<bool> menuShowPath("menu.Show Path", true, true);
     pangolin::Var<bool> menuShowEdge("menu.Show Edge", true, true);
+    pangolin::Var<bool> menuShowGroundTruth("menu.Show GroundTruth", true, true);
 
     // Define Camera Render Object (for view / scene browsing)
     pangolin::OpenGlRenderState s_cam(
@@ -111,6 +112,11 @@ void Visualizer::start()
             drawLoopEdge();
         }
 
+        if (menuShowGroundTruth)
+        {
+            drawGroundTruth();
+        }
+
         pangolin::FinishFrame();
 
         std::this_thread::sleep_for(std::chrono::milliseconds(30));
@@ -168,6 +174,88 @@ void Visualizer::updateTrajectory(const POSE_MSG &pose_msg)
     render_mtx.lock();
     trajectory.push_back(P);
     render_mtx.unlock();
+}
+
+void Visualizer::prepareGroundTruth(const POSE_MSG &pose_msg)
+{
+    if (pose_msg.timestamp > benchmark.back().t)
+        return;
+
+    while(benchmark_idx < static_cast<int>(benchmark.size()) && 
+        benchmark[benchmark_idx].t <= pose_msg.timestamp)
+    {
+        benchmark_idx++;
+    }
+
+
+    if (benchmark_init++ < benchmark_skip)
+    {
+        benchmark_baseRgt = Eigen::Quaterniond(pose_msg.orientation_w,
+                              pose_msg.orientation_x,
+                              pose_msg.orientation_y,
+                              pose_msg.orientation_z) *
+                  Eigen::Quaterniond(benchmark[benchmark_idx - 1].qw,
+                              benchmark[benchmark_idx - 1].qx,
+                              benchmark[benchmark_idx - 1].qy,
+                              benchmark[benchmark_idx - 1].qz).inverse();
+
+        benchmark_baseTgt = Eigen::Vector3d{
+                            pose_msg.position_x,
+                            pose_msg.position_y,
+                            pose_msg.position_z} -
+                  benchmark_baseRgt * Eigen::Vector3d{
+                                        benchmark[benchmark_idx - 1].px, 
+                                        benchmark[benchmark_idx - 1].py, 
+                                        benchmark[benchmark_idx - 1].pz
+                                    };
+        return;
+    }
+
+    POSE_MSG gt_pose_msg;
+    gt_pose_msg.timestamp = benchmark[benchmark_idx - 1].t;
+
+    Eigen::Vector3d tmp_T = benchmark_baseTgt + benchmark_baseRgt * 
+                                Eigen::Vector3d{
+                                    benchmark[benchmark_idx - 1].px, 
+                                    benchmark[benchmark_idx - 1].py, 
+                                    benchmark[benchmark_idx - 1].pz
+                                };
+    gt_pose_msg.position_x = tmp_T.x();
+    gt_pose_msg.position_y = tmp_T.y();
+    gt_pose_msg.position_z = tmp_T.z();
+
+    Eigen::Quaterniond tmp_R = benchmark_baseRgt * 
+                                Eigen::Quaterniond{
+                                    benchmark[benchmark_idx - 1].qw,
+                                    benchmark[benchmark_idx - 1].qx,
+                                    benchmark[benchmark_idx - 1].qy,
+                                    benchmark[benchmark_idx - 1].qz
+                                };
+
+    gt_pose_msg.orientation_w = tmp_R.w();
+    gt_pose_msg.orientation_x = tmp_R.x();
+    gt_pose_msg.orientation_y = tmp_R.y();
+    gt_pose_msg.orientation_z = tmp_R.z();
+
+    Eigen::Vector3d tmp_V = benchmark_baseRgt * 
+                                Eigen::Vector3d{
+                                    benchmark[benchmark_idx - 1].vx,
+                                    benchmark[benchmark_idx - 1].vy,
+                                    benchmark[benchmark_idx - 1].vz
+                                };
+    gt_pose_msg.linear_x = tmp_V.x();
+    gt_pose_msg.linear_y = tmp_V.y();
+    gt_pose_msg.linear_z = tmp_V.z();
+
+    pangolin::OpenGlMatrix benchmark_twc;
+    poseToGlMatrix(tmp_T, tmp_R.toRotationMatrix(), benchmark_twc);
+
+    render_mtx.lock();
+    benchmark_Twc = benchmark_twc;
+    benchmark_poses.push_back(benchmark_twc);
+    benchmark_trajectory.push_back(tmp_T);
+    render_mtx.unlock();
+
 }
 
 void Visualizer::updateNoLoopPath(const POSE_MSG &pose_msg)
@@ -375,6 +463,138 @@ void Visualizer::drawTrajectory()
     render_mtx.unlock();
 
     glEnd();
+}
+
+void Visualizer::drawGroundTruth()
+{
+    drawGroundTruthTrajectory();
+    drawGroundTruthCameraPoses();
+    drawGroundTruthCamera();
+}
+
+void Visualizer::drawGroundTruthCamera()
+{
+    pangolin::OpenGlMatrix benchmark_twc;
+    render_mtx.lock();
+    benchmark_twc = benchmark_Twc;
+    render_mtx.unlock();
+
+    const float &w = 0.08f;
+    const float h = w * 0.75;
+    const float z = w * 0.6;
+
+    glPushMatrix();
+
+    glMultMatrixd(benchmark_twc.m);
+
+    glLineWidth(3);
+    glColor3f(0.0f, 0.0f, 1.0f);
+    glBegin(GL_LINES);
+    glVertex3f(0, 0, 0);
+    glVertex3f(w, h, z);
+    glVertex3f(0, 0, 0);
+    glVertex3f(w, -h, z);
+    glVertex3f(0, 0, 0);
+    glVertex3f(-w, -h, z);
+    glVertex3f(0, 0, 0);
+    glVertex3f(-w, -h, z);
+    glVertex3f(0, 0, 0);
+    glVertex3f(-w, h, z);
+    
+    glVertex3f(w, h, z);
+    glVertex3f(w, -h, z);
+
+    glVertex3f(-w, h, z);
+    glVertex3f(-w, -h, z);
+
+    glVertex3f(-w, h, z);
+    glVertex3f(w, h, z);
+    
+    glVertex3f(-w, -h, z);
+    glVertex3f(w, -h, z);
+
+    glEnd();
+    glPopMatrix();
+}
+
+void Visualizer::drawGroundTruthTrajectory()
+{
+    if (benchmark_trajectory.size() == 0)
+        return;
+    
+    glLineWidth(2);
+    glColor3f(0.0f, 0.0f, 1.0f);
+    glBegin(GL_LINES);
+
+    render_mtx.lock();
+    for (unsigned int i = 0; i < benchmark_trajectory.size() - 1; ++i)
+    {
+        glVertex3f(
+            (float) benchmark_trajectory[i].x(),
+            (float) benchmark_trajectory[i].y(),
+            (float) benchmark_trajectory[i].z()
+        );
+
+        glVertex3f(
+            (float) benchmark_trajectory[i + 1].x(),
+            (float) benchmark_trajectory[i + 1].y(),
+            (float) benchmark_trajectory[i + 1].z()
+        );
+
+    }
+    render_mtx.unlock();
+
+    glEnd();
+}
+
+void Visualizer::drawGroundTruthCameraPoses()
+{
+    if (benchmark_poses.size() == 0)
+        return;
+
+    const float &w = 0.05f;
+    const float h = w * 0.75;
+    const float z = w * 0.6;
+
+    render_mtx.lock();
+    for (unsigned int i = 0; i < benchmark_poses.size(); ++i)
+    {
+        pangolin::OpenGlMatrix M;
+
+        M = benchmark_poses[i];
+
+        glPushMatrix();
+
+        glMultMatrixd(M.m);
+
+        glLineWidth(1);
+        glColor3f(0.0f, 0.0f, 1.0f);
+        glBegin(GL_LINES);
+        glVertex3f(0, 0, 0);
+        glVertex3f(w, h, z);
+        glVertex3f(0, 0, 0);
+        glVertex3f(w, -h, z);
+        glVertex3f(0, 0, 0);
+        glVertex3f(-w, -h, z);
+        glVertex3f(0, 0, 0);
+        glVertex3f(-w, h, z);
+
+        glVertex3f(w, h, z);
+        glVertex3f(w, -h, z);
+
+        glVertex3f(-w, h, z);
+        glVertex3f(-w, -h, z);
+
+        glVertex3f(-w, h, z);
+        glVertex3f(w, h, z);
+
+        glVertex3f(-w, -h, z);
+        glVertex3f(w, -h, z);
+        glEnd();
+
+        glPopMatrix();
+    }      
+    render_mtx.unlock();  
 }
 
 void Visualizer::drawNoLoopPath()

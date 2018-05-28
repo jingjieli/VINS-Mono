@@ -16,6 +16,7 @@ public:
     void addKeyframePose(const POSE_MSG &pose_msg);
     void updatePointCloud(const std::vector<Eigen::Vector3d> &points);
     void updateTrajectory(const POSE_MSG &pose_msg);
+    void prepareGroundTruth(const POSE_MSG &pose_msg);
     void updateNoLoopPath(const POSE_MSG &pose_msg);
     void updateRelocPath(const POSE_MSG &pose_msg);
     void addLoopEdge(const Eigen::Vector3d &p0, const Eigen::Vector3d &p1);
@@ -47,11 +48,25 @@ private:
 
     bool is_running = false;
 
+    int benchmark_idx = 1;
+    int benchmark_init = 0;
+    const int benchmark_skip = 50;
+    Eigen::Quaterniond benchmark_baseRgt;
+    Eigen::Vector3d benchmark_baseTgt;
+
+    pangolin::OpenGlMatrix benchmark_Twc;
+    std::vector<pangolin::OpenGlMatrix> benchmark_poses;
+    std::vector<Eigen::Vector3d> benchmark_trajectory;
+
     void start();
     void drawCurrentCamera(const pangolin::OpenGlMatrix &M);
     void drawKeyframes();
     void drawPointCloud();
     void drawTrajectory();
+    void drawGroundTruth();
+    void drawGroundTruthCamera();
+    void drawGroundTruthTrajectory();
+    void drawGroundTruthCameraPoses();
     void drawNoLoopPath();
     void drawRelocPath();
     void drawLoopEdge();

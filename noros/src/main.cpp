@@ -48,7 +48,7 @@ int main(int argc, char** argv)
 
     readEurocTimestamp(euroc_dataset_path);
 
-    //readGroundtruth(euroc_groundtruth_path);
+    readGroundtruth(euroc_groundtruth_path);
 
     vi_system = new VISystem();
 
@@ -161,8 +161,8 @@ void readEurocImuData(const std::string &file_path)
 
             }
 
-            printf("%f %f %f %f %f %f %f\n", imu_data[0], imu_data[1], imu_data[2],
-                                imu_data[3], imu_data[4], imu_data[5], imu_data[6]);
+            // printf("%f %f %f %f %f %f %f\n", imu_data[0], imu_data[1], imu_data[2],
+            //                     imu_data[3], imu_data[4], imu_data[5], imu_data[6]);
 
             imu_storage.push_back(imu_data);
 

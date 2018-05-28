@@ -410,6 +410,7 @@ void VIEstimator::pubOdometry(double timestamp)
     if (estimator->solver_flag == Estimator::SolverFlag::NON_LINEAR)
     {
         POSE_MSG pose_msg;
+        pose_msg.timestamp = timestamp;
         Quaterniond tmp_Q;
         tmp_Q = Quaterniond(estimator->Rs[WINDOW_SIZE]);
         pose_msg.position_x = estimator->Ps[WINDOW_SIZE].x();
@@ -428,6 +429,7 @@ void VIEstimator::pubOdometry(double timestamp)
 
         assert(visualizer_ptr != nullptr);
         visualizer_ptr->updateTrajectory(pose_msg);
+        visualizer_ptr->prepareGroundTruth(pose_msg);
 
         // geometry_msgs::PoseStamped pose_stamped;
         // pose_stamped.header = header;
@@ -457,22 +459,25 @@ void VIEstimator::pubOdometry(double timestamp)
         visualizer_ptr->updateRelocPath(new_pose_msg);
 
         // write result to file
-        ofstream foutC(VINS_RESULT_NO_LOOP_PATH, ios::app);
-        foutC.setf(ios::fixed, ios::floatfield);
-        foutC.precision(0);
-        foutC << timestamp * 1e9 << ",";
-        foutC.precision(5);
-        foutC << estimator->Ps[WINDOW_SIZE].x() << ","
-              << estimator->Ps[WINDOW_SIZE].y() << ","
-              << estimator->Ps[WINDOW_SIZE].z() << ","
-              << tmp_Q.w() << ","
-              << tmp_Q.x() << ","
-              << tmp_Q.y() << ","
-              << tmp_Q.z() << ","
-              << estimator->Vs[WINDOW_SIZE].x() << ","
-              << estimator->Vs[WINDOW_SIZE].y() << ","
-              << estimator->Vs[WINDOW_SIZE].z() << "," << endl;
-        foutC.close();
+        if (SAVE_NO_LOOP_PATH)
+        {
+            ofstream foutC(VINS_RESULT_NO_LOOP_PATH, ios::app);
+            foutC.setf(ios::fixed, ios::floatfield);
+            foutC.precision(0);
+            foutC << timestamp * 1e9 << ",";
+            foutC.precision(5);
+            foutC << estimator->Ps[WINDOW_SIZE].x() << ","
+                << estimator->Ps[WINDOW_SIZE].y() << ","
+                << estimator->Ps[WINDOW_SIZE].z() << ","
+                << tmp_Q.w() << ","
+                << tmp_Q.x() << ","
+                << tmp_Q.y() << ","
+                << tmp_Q.z() << ","
+                << estimator->Vs[WINDOW_SIZE].x() << ","
+                << estimator->Vs[WINDOW_SIZE].y() << ","
+                << estimator->Vs[WINDOW_SIZE].z() << "," << endl;
+            foutC.close();
+        }
     }
 }
 
