@@ -1,3 +1,4 @@
+#ifndef NO_ROS
 #pragma once
 
 #include <ros/ros.h>
@@ -64,3 +65,5 @@ enum NoiseOrder
     O_AW = 6,
     O_GW = 9
 };
+
+#endif

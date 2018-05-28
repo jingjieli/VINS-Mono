@@ -1,10 +1,16 @@
 #pragma once
+#ifndef NO_ROS
 #include <ros/assert.h>
+#endif
 #include <iostream>
 #include <eigen3/Eigen/Dense>
 
 #include "../utility/utility.h"
+#ifndef NO_ROS
 #include "../parameters.h"
+#else 
+#include "global_parameters.h"
+#endif 
 #include "integration_base.h"
 
 #include <ceres/ceres.h>
@@ -78,7 +84,9 @@ class IMUFactor : public ceres::SizedCostFunction<15, 7, 9, 7, 9>
 
             if (pre_integration->jacobian.maxCoeff() > 1e8 || pre_integration->jacobian.minCoeff() < -1e8)
             {
+#ifndef NO_ROS
                 ROS_WARN("numerical unstable in preintegration");
+#endif 
                 //std::cout << pre_integration->jacobian << std::endl;
 ///                ROS_BREAK();
             }
@@ -104,7 +112,9 @@ class IMUFactor : public ceres::SizedCostFunction<15, 7, 9, 7, 9>
 
                 if (jacobian_pose_i.maxCoeff() > 1e8 || jacobian_pose_i.minCoeff() < -1e8)
                 {
+#ifndef NO_ROS
                     ROS_WARN("numerical unstable in preintegration");
+#endif 
                     //std::cout << sqrt_info << std::endl;
                     //ROS_BREAK();
                 }

@@ -23,6 +23,7 @@ std::string IMU_TOPIC;
 double ROW, COL;
 double TD, TR;
 
+#ifndef NO_ROS
 template <typename T>
 T readParam(ros::NodeHandle &n, std::string name)
 {
@@ -131,3 +132,4 @@ void readParameters(ros::NodeHandle &n)
     
     fsSettings.release();
 }
+#endif

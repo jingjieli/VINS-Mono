@@ -2,7 +2,11 @@
 
 #include <eigen3/Eigen/Dense>
 #include <ceres/ceres.h>
+#ifndef NO_ROS
 #include "../utility/utility.h"
+#else
+#include "common/utility.h"
+#endif
 
 class PoseLocalParameterization : public ceres::LocalParameterization
 {

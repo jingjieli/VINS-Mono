@@ -7,9 +7,16 @@
 #include "camodocal/camera_models/CameraFactory.h"
 #include "camodocal/camera_models/CataCamera.h"
 #include "camodocal/camera_models/PinholeCamera.h"
+#ifndef NO_ROS
 #include "utility/tic_toc.h"
 #include "utility/utility.h"
 #include "parameters.h"
+#else 
+#include "global_parameters.h"
+#include "common/tic_toc.h"
+#include "common/utility.h"
+class VIEstimator;
+#endif 
 #include "ThirdParty/DBoW/DBoW2.h"
 #include "ThirdParty/DVision/DVision.h"
 
@@ -38,7 +45,11 @@ public:
 	KeyFrame(double _time_stamp, int _index, Vector3d &_vio_T_w_i, Matrix3d &_vio_R_w_i, Vector3d &_T_w_i, Matrix3d &_R_w_i,
 			 cv::Mat &_image, int _loop_index, Eigen::Matrix<double, 8, 1 > &_loop_info,
 			 vector<cv::KeyPoint> &_keypoints, vector<cv::KeyPoint> &_keypoints_norm, vector<BRIEF::bitset> &_brief_descriptors);
+#ifndef NO_ROS	
 	bool findConnection(KeyFrame* old_kf);
+#else
+	bool findConnection(KeyFrame* old_kf, VIEstimator* estimator_ptr);
+#endif
 	void computeWindowBRIEFPoint();
 	void computeBRIEFPoint();
 	//void extractBrief();

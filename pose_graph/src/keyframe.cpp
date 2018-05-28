@@ -1,5 +1,9 @@
 #include "keyframe.h"
 
+#ifdef NO_ROS
+#include "vi_estimator.h"
+#endif
+
 template <typename Derived>
 static void reduceVector(vector<Derived> &v, vector<uchar> status)
 {
@@ -209,8 +213,13 @@ void KeyFrame::PnPRANSAC(const vector<cv::Point2f> &matched_2d_old_norm,
     cv::Mat K = (cv::Mat_<double>(3, 3) << 1.0, 0, 0, 0, 1.0, 0, 0, 0, 1.0);
     Matrix3d R_inital;
     Vector3d P_inital;
+#ifndef NO_ROS
     Matrix3d R_w_c = origin_vio_R * qic;
     Vector3d T_w_c = origin_vio_T + origin_vio_R * tic;
+#else 
+	Matrix3d R_w_c = origin_vio_R * reloc_qic;
+    Vector3d T_w_c = origin_vio_T + origin_vio_R * reloc_tic;
+#endif
 
     R_inital = R_w_c.inverse();
     P_inital = -(R_inital * T_w_c);
@@ -250,13 +259,21 @@ void KeyFrame::PnPRANSAC(const vector<cv::Point2f> &matched_2d_old_norm,
     cv::cv2eigen(t, T_pnp);
     T_w_c_old = R_w_c_old * (-T_pnp);
 
+#ifndef NO_ROS
     PnP_R_old = R_w_c_old * qic.transpose();
     PnP_T_old = T_w_c_old - PnP_R_old * tic;
+#else 
+	PnP_R_old = R_w_c_old * reloc_qic.transpose();
+    PnP_T_old = T_w_c_old - PnP_R_old * reloc_tic;
+#endif 
 
 }
 
-
+#ifndef NO_ROS
 bool KeyFrame::findConnection(KeyFrame* old_kf)
+#else 
+bool KeyFrame::findConnection(KeyFrame* old_kf, VIEstimator* estimator_ptr)
+#endif 
 {
 	TicToc tmp_t;
 	//printf("find Connection\n");
@@ -461,9 +478,12 @@ bool KeyFrame::findConnection(KeyFrame* old_kf)
 	            	*/
 	            	cv::Mat thumbimage;
 	            	cv::resize(loop_match_img, thumbimage, cv::Size(loop_match_img.cols / 2, loop_match_img.rows / 2));
-	    	    	sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", thumbimage).toImageMsg();
+#ifndef NO_ROS
+// FIX ME
+					sensor_msgs::ImagePtr msg = cv_bridge::CvImage(std_msgs::Header(), "bgr8", thumbimage).toImageMsg();
 	                msg->header.stamp = ros::Time(time_stamp);
 	    	    	pub_match_img.publish(msg);
+#endif
 	            }
 	        }
 	    #endif
@@ -487,6 +507,7 @@ bool KeyFrame::findConnection(KeyFrame* old_kf)
 	    	             relative_yaw;
 	    	if(FAST_RELOCALIZATION)
 	    	{
+#ifndef NO_ROS
 			    sensor_msgs::PointCloud msg_match_points;
 			    msg_match_points.header.stamp = ros::Time(time_stamp);
 			    for (int i = 0; i < (int)matched_2d_old_norm.size(); i++)
@@ -511,6 +532,31 @@ bool KeyFrame::findConnection(KeyFrame* old_kf)
 			    t_q_index.values.push_back(index);
 			    msg_match_points.channels.push_back(t_q_index);
 			    pub_match_points.publish(msg_match_points);
+#else 
+				RELOC_MSG reloc_msg;
+				reloc_msg.timestamp = time_stamp;
+				for (int i = 0; i < (int)matched_2d_old_norm.size(); i++)
+			    {
+					MATCH_POINT p;
+					p.matched_x = matched_2d_old_norm[i].x;
+		            p.matched_y = matched_2d_old_norm[i].y;
+		            p.matched_z = matched_id[i];
+					reloc_msg.matched_points.push_back(p);
+			    }
+				Eigen::Vector3d T = old_kf->T_w_i; 
+			    Eigen::Matrix3d R = old_kf->R_w_i;
+			    Quaterniond Q(R);
+				reloc_msg.transform.push_back(T.x());
+			    reloc_msg.transform.push_back(T.y());
+			    reloc_msg.transform.push_back(T.z());
+			    reloc_msg.transform.push_back(Q.w());
+			    reloc_msg.transform.push_back(Q.x());
+			    reloc_msg.transform.push_back(Q.y());
+			    reloc_msg.transform.push_back(Q.z());
+				reloc_msg.idx = index;
+
+				estimator_ptr->prepareRolocalizationResult(reloc_msg);
+#endif
 	    	}
 	        return true;
 	    }

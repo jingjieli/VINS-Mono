@@ -13,8 +13,13 @@
 #include "camodocal/camera_models/CataCamera.h"
 #include "camodocal/camera_models/PinholeCamera.h"
 
+#ifndef NO_ROS
 #include "parameters.h"
 #include "tic_toc.h"
+#else 
+#include "global_parameters.h"
+#include "common/tic_toc.h"
+#endif
 
 using namespace std;
 using namespace camodocal;

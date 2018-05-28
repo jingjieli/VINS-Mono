@@ -1,3 +1,4 @@
+#ifndef NO_ROS
 #pragma once
 
 #include <cmath>
@@ -138,3 +139,5 @@ class Utility
             two_pi * std::floor((-angle_degrees + T(180)) / two_pi);
     };
 };
+
+#endif

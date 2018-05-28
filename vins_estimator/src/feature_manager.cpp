@@ -44,8 +44,10 @@ int FeatureManager::getFeatureCount()
 
 bool FeatureManager::addFeatureCheckParallax(int frame_count, const map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> &image, double td)
 {
+#ifndef NO_ROS
     ROS_DEBUG("input feature: %d", (int)image.size());
     ROS_DEBUG("num of feature: %d", getFeatureCount());
+#endif
     double parallax_sum = 0;
     int parallax_num = 0;
     last_track_num = 0;
@@ -90,30 +92,46 @@ bool FeatureManager::addFeatureCheckParallax(int frame_count, const map<int, vec
     }
     else
     {
+#ifndef NO_ROS
         ROS_DEBUG("parallax_sum: %lf, parallax_num: %d", parallax_sum, parallax_num);
         ROS_DEBUG("current parallax: %lf", parallax_sum / parallax_num * FOCAL_LENGTH);
+#endif
         return parallax_sum / parallax_num >= MIN_PARALLAX;
     }
 }
 
 void FeatureManager::debugShow()
 {
+#ifndef NO_ROS
     ROS_DEBUG("debug show");
+#endif
     for (auto &it : feature)
     {
+#ifndef NO_ROS
         ROS_ASSERT(it.feature_per_frame.size() != 0);
         ROS_ASSERT(it.start_frame >= 0);
         ROS_ASSERT(it.used_num >= 0);
 
         ROS_DEBUG("%d,%d,%d ", it.feature_id, it.used_num, it.start_frame);
+#else
+        assert(it.feature_per_frame.size() != 0);
+        assert(it.start_frame >= 0);
+        assert(it.used_num >= 0);
+#endif
         int sum = 0;
         for (auto &j : it.feature_per_frame)
         {
+#ifndef NO_ROS
             ROS_DEBUG("%d,", int(j.is_used));
+#endif
             sum += j.is_used;
             printf("(%lf,%lf) ",j.point(0), j.point(1));
         }
+#ifndef NO_ROS
         ROS_ASSERT(it.used_num == sum);
+#else
+        assert(it.used_num == sum);
+#endif
     }
 }
 
@@ -210,8 +228,11 @@ void FeatureManager::triangulate(Vector3d Ps[], Vector3d tic[], Matrix3d ric[])
         if (it_per_id.estimated_depth > 0)
             continue;
         int imu_i = it_per_id.start_frame, imu_j = imu_i - 1;
-
+#ifndef NO_ROS
         ROS_ASSERT(NUM_OF_CAM == 1);
+#else
+        assert(NUM_OF_CAM == 1);
+#endif
         Eigen::MatrixXd svd_A(2 * it_per_id.feature_per_frame.size(), 4);
         int svd_idx = 0;
 
@@ -239,7 +260,11 @@ void FeatureManager::triangulate(Vector3d Ps[], Vector3d tic[], Matrix3d ric[])
             if (imu_i == imu_j)
                 continue;
         }
+#ifndef NO_ROS
         ROS_ASSERT(svd_idx == svd_A.rows());
+#else
+        assert(svd_idx == svd_A.rows());
+#endif
         Eigen::Vector4d svd_V = Eigen::JacobiSVD<Eigen::MatrixXd>(svd_A, Eigen::ComputeThinV).matrixV().rightCols<1>();
         double svd_method = svd_V[2] / svd_V[3];
         //it_per_id->estimated_depth = -b / A;
@@ -258,7 +283,9 @@ void FeatureManager::triangulate(Vector3d Ps[], Vector3d tic[], Matrix3d ric[])
 
 void FeatureManager::removeOutlier()
 {
+#ifndef NO_ROS
     ROS_BREAK();
+#endif // FIX ME: add else ?
     int i = -1;
     for (auto it = feature.begin(), it_next = feature.begin();
          it != feature.end(); it = it_next)

@@ -2,8 +2,12 @@
 #include <eigen3/Eigen/Dense>
 #include <iostream>
 #include "../factor/imu_factor.h"
+#ifndef NO_ROS
 #include "../utility/utility.h"
 #include <ros/ros.h>
+#else 
+#include "common/utility.h"
+#endif
 #include <map>
 #include "../feature_manager.h"
 

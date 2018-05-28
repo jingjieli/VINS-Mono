@@ -8,7 +8,9 @@ using namespace std;
 #include <eigen3/Eigen/Dense>
 using namespace Eigen;
 
+#ifndef NO_ROS
 #include <ros/console.h>
+#endif
 
 class MotionEstimator
 {

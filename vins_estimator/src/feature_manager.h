@@ -10,10 +10,17 @@ using namespace std;
 #include <eigen3/Eigen/Dense>
 using namespace Eigen;
 
+#ifndef NO_ROS
 #include <ros/console.h>
 #include <ros/assert.h>
+#endif
 
+#ifndef NO_ROS
 #include "parameters.h"
+#else 
+#include <map>
+#include "global_parameters.h"
+#endif 
 
 class FeaturePerFrame
 {
@@ -76,7 +83,7 @@ class FeatureManager
 
     int getFeatureCount();
 
-    bool addFeatureCheckParallax(int frame_count, const map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> &image, double td);
+    bool addFeatureCheckParallax(int frame_count, const map<int, vector<pair<int, Eigen::Matrix<double, 7, 1> > > > &image, double td);
     void debugShow();
     vector<pair<Vector3d, Vector3d>> getCorresponding(int frame_count_l, int frame_count_r);
 

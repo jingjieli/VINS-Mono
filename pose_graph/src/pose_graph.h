@@ -9,16 +9,24 @@
 #include <ceres/rotation.h>
 #include <queue>
 #include <assert.h>
+
+#ifndef NO_ROS
 #include <nav_msgs/Path.h>
 #include <geometry_msgs/PointStamped.h>
 #include <nav_msgs/Odometry.h>
-#include <stdio.h>
 #include <ros/ros.h>
-#include "keyframe.h"
 #include "utility/tic_toc.h"
 #include "utility/utility.h"
 #include "utility/CameraPoseVisualization.h"
-#include "utility/tic_toc.h"
+#else
+#include "common/tic_toc.h"
+#include "common/utility.h"
+class Visualizer;
+#endif 
+
+#include <stdio.h>
+#include "keyframe.h"
+
 #include "ThirdParty/DBoW/DBoW2.h"
 #include "ThirdParty/DVision/DVision.h"
 #include "ThirdParty/DBoW/TemplatedDatabase.h"
@@ -37,18 +45,35 @@ class PoseGraph
 public:
 	PoseGraph();
 	~PoseGraph();
+#ifndef NO_ROS
 	void registerPub(ros::NodeHandle &n);
 	void addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop);
 	void loadKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop);
+#else 
+	void setVisualizer(Visualizer* vis_ptr);
+	void addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop, 
+						VIEstimator* estimator_ptr);
+	void loadKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop, 
+						VIEstimator* estimator_ptr);
+#endif
 	void loadVocabulary(std::string voc_path);
 	void updateKeyFrameLoop(int index, Eigen::Matrix<double, 8, 1 > &_loop_info);
 	KeyFrame* getKeyFrame(int index);
+#ifndef NO_ROS
 	nav_msgs::Path path[10];
 	nav_msgs::Path base_path;
 	CameraPoseVisualization* posegraph_visualization;
+#else 
+	std::vector<POSE_MSG> path[10];
+	std::vector<POSE_MSG> base_path;
+#endif
 	void savePoseGraph();
+#ifndef NO_ROS
 	void loadPoseGraph();
 	void publish();
+#else 
+	void loadPoseGraph(VIEstimator* estimator_ptr);
+#endif
 	Vector3d t_drift;
 	double yaw_drift;
 	Matrix3d r_drift;
@@ -60,8 +85,13 @@ public:
 private:
 	int detectLoop(KeyFrame* keyframe, int frame_index);
 	void addKeyFrameIntoVoc(KeyFrame* keyframe);
+#ifndef NO_ROS
 	void optimize4DoF();
 	void updatePath();
+#else 
+	void optimize4DoF(Visualizer* vis_ptr);
+	void updatePath(Visualizer* vis_ptr);
+#endif 
 	list<KeyFrame*> keyframelist;
 	std::mutex m_keyframelist;
 	std::mutex m_optimize_buf;
@@ -80,10 +110,14 @@ private:
 	BriefDatabase db;
 	BriefVocabulary* voc;
 
+#ifndef NO_ROS
 	ros::Publisher pub_pg_path;
 	ros::Publisher pub_base_path;
 	ros::Publisher pub_pose_graph;
 	ros::Publisher pub_path[10];
+#else 
+	Visualizer* visualizer_ptr = nullptr;
+#endif
 };
 
 template <typename T>

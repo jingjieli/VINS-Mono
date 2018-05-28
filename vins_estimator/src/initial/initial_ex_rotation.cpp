@@ -24,8 +24,10 @@ bool InitialEXRotation::CalibrationExRotation(vector<pair<Vector3d, Vector3d>> c
         Quaterniond r2(Rc_g[i]);
 
         double angular_distance = 180 / M_PI * r1.angularDistance(r2);
+#ifndef NO_ROS
         ROS_DEBUG(
             "%d %f", i, angular_distance);
+#endif
 
         double huber = angular_distance > 5.0 ? 5.0 / angular_distance : 1.0;
         ++sum_ok;
@@ -120,7 +122,9 @@ double InitialEXRotation::testTriangulation(const vector<cv::Point2f> &l,
         if (p_3d_l(2) > 0 && p_3d_r(2) > 0)
             front_count++;
     }
+#ifndef NO_ROS
     ROS_DEBUG("MotionEstimator: %f", 1.0 * front_count / pointcloud.cols);
+#endif
     return 1.0 * front_count / pointcloud.cols;
 }
 

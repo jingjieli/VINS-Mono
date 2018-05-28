@@ -1,14 +1,21 @@
 #pragma once 
 
 #include <vector>
+#ifndef NO_ROS
 #include "../parameters.h"
+#else 
+#include "common/utility.h"
+#include "global_parameters.h"
+#endif 
 using namespace std;
 
 #include <opencv2/opencv.hpp>
 
 #include <eigen3/Eigen/Dense>
 using namespace Eigen;
+#ifndef NO_ROS
 #include <ros/console.h>
+#endif
 
 /* This class help you to calibrate extrinsic rotation between imu and camera when your totally don't konw the extrinsic parameter */
 class InitialEXRotation

@@ -1,11 +1,19 @@
 #pragma once
 
+#ifndef NO_ROS
 #include <ros/assert.h>
+#endif
 #include <ceres/ceres.h>
 #include <Eigen/Dense>
+#ifndef NO_ROS
 #include "../utility/utility.h"
 #include "../utility/tic_toc.h"
 #include "../parameters.h"
+#else 
+#include "global_parameters.h"
+#include "common/utility.h"
+#include "common/tic_toc.h"
+#endif 
 
 class ProjectionFactor : public ceres::SizedCostFunction<2, 7, 7, 7, 1>
 {

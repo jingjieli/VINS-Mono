@@ -1,11 +1,17 @@
 #include "pose_graph.h"
 
+#ifdef NO_ROS
+#include "visualizer.h"
+#endif
+
 PoseGraph::PoseGraph()
 {
+#ifndef NO_ROS
     posegraph_visualization = new CameraPoseVisualization(1.0, 0.0, 1.0, 1.0);
     posegraph_visualization->setScale(0.1);
     posegraph_visualization->setLineWidth(0.01);
 	t_optimization = std::thread(&PoseGraph::optimize4DoF, this);
+#endif 
     earliest_loop_index = -1;
     t_drift = Eigen::Vector3d(0, 0, 0);
     yaw_drift = 0;
@@ -24,6 +30,7 @@ PoseGraph::~PoseGraph()
 	t_optimization.join();
 }
 
+#ifndef NO_ROS
 void PoseGraph::registerPub(ros::NodeHandle &n)
 {
     pub_pg_path = n.advertise<nav_msgs::Path>("pose_graph_path", 1000);
@@ -32,6 +39,16 @@ void PoseGraph::registerPub(ros::NodeHandle &n)
     for (int i = 1; i < 10; i++)
         pub_path[i] = n.advertise<nav_msgs::Path>("path_" + to_string(i), 1000);
 }
+#else 
+void PoseGraph::setVisualizer(Visualizer* vis_ptr)
+{
+    if (vis_ptr)
+    {
+        visualizer_ptr = vis_ptr;
+        t_optimization = std::thread(&PoseGraph::optimize4DoF, this, visualizer_ptr);
+    }
+}
+#endif
 
 void PoseGraph::loadVocabulary(std::string voc_path)
 {
@@ -39,7 +56,11 @@ void PoseGraph::loadVocabulary(std::string voc_path)
     db.setVocabulary(*voc, false, 0);
 }
 
+#ifndef NO_ROS
 void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
+#else
+void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop, VIEstimator* estimator_ptr)
+#endif
 {
     //shift to base frame
     Vector3d vio_P_cur;
@@ -77,7 +98,11 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
         //printf(" %d detect loop with %d \n", cur_kf->index, loop_index);
         KeyFrame* old_kf = getKeyFrame(loop_index);
 
+#ifndef NO_ROS
         if (cur_kf->findConnection(old_kf))
+#else 
+        if (cur_kf->findConnection(old_kf, estimator_ptr))
+#endif
         {
             if (earliest_loop_index > loop_index || earliest_loop_index == -1)
                 earliest_loop_index = loop_index;
@@ -135,6 +160,7 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
     R = r_drift * R;
     cur_kf->updatePose(P, R);
     Quaterniond Q{R};
+#ifndef NO_ROS
     geometry_msgs::PoseStamped pose_stamped;
     pose_stamped.header.stamp = ros::Time(cur_kf->time_stamp);
     pose_stamped.header.frame_id = "world";
@@ -147,6 +173,18 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
     pose_stamped.pose.orientation.w = Q.w();
     path[sequence_cnt].poses.push_back(pose_stamped);
     path[sequence_cnt].header = pose_stamped.header;
+#else 
+    POSE_MSG pose_msg;
+    pose_msg.timestamp = cur_kf->time_stamp;
+    pose_msg.position_x = P.x();
+    pose_msg.position_y = P.y();
+    pose_msg.position_z = P.z();
+    pose_msg.orientation_x = Q.x();
+    pose_msg.orientation_y = Q.y();
+    pose_msg.orientation_z = Q.z();
+    pose_msg.orientation_w = Q.w();
+    path[sequence_cnt].push_back(pose_msg);
+#endif
 
     if (SAVE_LOOP_PATH)
     {
@@ -178,7 +216,9 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
             if((*rit)->sequence == cur_kf->sequence)
             {
                 (*rit)->getPose(conncected_P, connected_R);
+#ifndef NO_ROS
                 posegraph_visualization->add_edge(P, conncected_P);
+#endif
             }
             rit++;
         }
@@ -196,8 +236,12 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
             cur_kf->getPose(P0, R0);
             if(cur_kf->sequence > 0)
             {
-                //printf("add loop into visual \n");
+                printf("add loop into visual \n");
+#ifndef NO_ROS
                 posegraph_visualization->add_loopedge(P0, connected_P + Vector3d(VISUALIZATION_SHIFT_X, VISUALIZATION_SHIFT_Y, 0));
+#else
+                visualizer_ptr->addLoopEdge(P0, connected_P);
+#endif
             }
             
         }
@@ -205,12 +249,27 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
     //posegraph_visualization->add_pose(P + Vector3d(VISUALIZATION_SHIFT_X, VISUALIZATION_SHIFT_Y, 0), Q);
 
 	keyframelist.push_back(cur_kf);
+#ifndef NO_ROS
     publish();
+#else 
+    assert(visualizer_ptr != nullptr);
+    for (int i = 1; i <= sequence_cnt; i++)
+    {
+        if (1 || i == base_sequence)
+        {
+            visualizer_ptr->updatePoseGraphPath(path[i]);
+            visualizer_ptr->updatePoseGraph(path[sequence_cnt]);
+        }
+    }
+#endif
 	m_keyframelist.unlock();
 }
 
-
+#ifndef NO_ROS
 void PoseGraph::loadKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
+#else 
+void PoseGraph::loadKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop, VIEstimator* estimator_ptr)
+#endif 
 {
     cur_kf->index = global_index;
     global_index++;
@@ -225,7 +284,11 @@ void PoseGraph::loadKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
     {
         printf(" %d detect loop with %d \n", cur_kf->index, loop_index);
         KeyFrame* old_kf = getKeyFrame(loop_index);
+#ifndef NO_ROS
         if (cur_kf->findConnection(old_kf))
+#else
+        if (cur_kf->findConnection(old_kf, estimator_ptr))
+#endif
         {
             if (earliest_loop_index > loop_index || earliest_loop_index == -1)
                 earliest_loop_index = loop_index;
@@ -239,6 +302,7 @@ void PoseGraph::loadKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
     Matrix3d R;
     cur_kf->getPose(P, R);
     Quaterniond Q{R};
+#ifndef NO_ROS
     geometry_msgs::PoseStamped pose_stamped;
     pose_stamped.header.stamp = ros::Time(cur_kf->time_stamp);
     pose_stamped.header.frame_id = "world";
@@ -251,7 +315,7 @@ void PoseGraph::loadKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
     pose_stamped.pose.orientation.w = Q.w();
     base_path.poses.push_back(pose_stamped);
     base_path.header = pose_stamped.header;
-
+#endif
     //draw local connection
     if (SHOW_S_EDGE)
     {
@@ -265,7 +329,9 @@ void PoseGraph::loadKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop)
             if((*rit)->sequence == cur_kf->sequence)
             {
                 (*rit)->getPose(conncected_P, connected_R);
+#ifndef NO_ROS
                 posegraph_visualization->add_edge(P, conncected_P);
+#endif
             }
             rit++;
         }
@@ -400,7 +466,11 @@ void PoseGraph::addKeyFrameIntoVoc(KeyFrame* keyframe)
     db.add(keyframe->brief_descriptors);
 }
 
+#ifndef NO_ROS
 void PoseGraph::optimize4DoF()
+#else 
+void PoseGraph::optimize4DoF(Visualizer* vis_ptr)
+#endif 
 {
     while(true)
     {
@@ -570,7 +640,12 @@ void PoseGraph::optimize4DoF()
                 (*it)->updatePose(P, R);
             }
             m_keyframelist.unlock();
+#ifndef NO_ROS
             updatePath();
+#else 
+            assert(vis_ptr != nullptr);
+            updatePath(vis_ptr);
+#endif
         }
 
         std::chrono::milliseconds dura(2000);
@@ -578,16 +653,29 @@ void PoseGraph::optimize4DoF()
     }
 }
 
+#ifndef NO_ROS
 void PoseGraph::updatePath()
+#else 
+void PoseGraph::updatePath(Visualizer* vis_ptr)
+#endif 
 {
     m_keyframelist.lock();
     list<KeyFrame*>::iterator it;
+#ifndef NO_ROS
     for (int i = 1; i <= sequence_cnt; i++)
     {
         path[i].poses.clear();
     }
     base_path.poses.clear();
     posegraph_visualization->reset();
+#else 
+    for (int i = 1; i <= sequence_cnt; i++)
+    {
+        path[i].clear();
+    }
+    base_path.clear();
+    vis_ptr->resetPoseGraph();
+#endif
 
     if (SAVE_LOOP_PATH)
     {
@@ -604,6 +692,7 @@ void PoseGraph::updatePath()
         Q = R;
 //        printf("path p: %f, %f, %f\n",  P.x(),  P.z(),  P.y() );
 
+#ifndef NO_ROS
         geometry_msgs::PoseStamped pose_stamped;
         pose_stamped.header.stamp = ros::Time((*it)->time_stamp);
         pose_stamped.header.frame_id = "world";
@@ -624,6 +713,25 @@ void PoseGraph::updatePath()
             path[(*it)->sequence].poses.push_back(pose_stamped);
             path[(*it)->sequence].header = pose_stamped.header;
         }
+#else 
+        POSE_MSG pose_msg;
+        pose_msg.timestamp = (*it)->time_stamp;
+        pose_msg.position_x = P.x();
+        pose_msg.position_y = P.y();
+        pose_msg.position_z = P.z();
+        pose_msg.orientation_x = Q.x();
+        pose_msg.orientation_y = Q.y();
+        pose_msg.orientation_z = Q.z();
+        pose_msg.orientation_w = Q.w();
+        if((*it)->sequence == 0)
+        {
+            base_path.push_back(pose_msg);
+        }
+        else
+        {
+            path[(*it)->sequence].push_back(pose_msg);
+        }
+#endif 
 
         if (SAVE_LOOP_PATH)
         {
@@ -662,7 +770,9 @@ void PoseGraph::updatePath()
                             Vector3d conncected_P;
                             Matrix3d connected_R;
                             (*lrit)->getPose(conncected_P, connected_R);
+#ifndef NO_ROS
                             posegraph_visualization->add_edge(P, conncected_P);
+#endif
                         }
                         lrit++;
                     }
@@ -683,13 +793,29 @@ void PoseGraph::updatePath()
                 (*it)->getPose(P, R);
                 if((*it)->sequence > 0)
                 {
+#ifndef NO_ROS
                     posegraph_visualization->add_loopedge(P, connected_P + Vector3d(VISUALIZATION_SHIFT_X, VISUALIZATION_SHIFT_Y, 0));
+#else 
+                    vis_ptr->addLoopEdge(P, connected_P);
+#endif 
                 }
             }
         }
 
     }
+#ifndef NO_ROS
     publish();
+#else 
+    assert(visualizer_ptr != nullptr);
+    for (int i = 1; i <= sequence_cnt; i++)
+    {
+        if (1 || i == base_sequence)
+        {
+            visualizer_ptr->updatePoseGraphPath(path[i]);
+            visualizer_ptr->updatePoseGraph(path[sequence_cnt]);
+        }
+    }
+#endif
     m_keyframelist.unlock();
 }
 
@@ -749,7 +875,12 @@ void PoseGraph::savePoseGraph()
     printf("save pose graph time: %f s\n", tmp_t.toc() / 1000);
     m_keyframelist.unlock();
 }
+
+#ifndef NO_ROS
 void PoseGraph::loadPoseGraph()
+#else 
+void PoseGraph::loadPoseGraph(VIEstimator* estimator_ptr)
+#endif 
 {
     TicToc tmp_t;
     FILE * pFile;
@@ -857,11 +988,15 @@ void PoseGraph::loadPoseGraph()
         fclose(keypoints_file);
 
         KeyFrame* keyframe = new KeyFrame(time_stamp, index, VIO_T, VIO_R, PG_T, PG_R, image, loop_index, loop_info, keypoints, keypoints_norm, brief_descriptors);
+#ifndef NO_ROS        
         loadKeyFrame(keyframe, 0);
         if (cnt % 20 == 0)
         {
             publish();
         }
+#else 
+        loadKeyFrame(keyframe, 0, estimator_ptr);
+#endif
         cnt++;
     }
     fclose (pFile);
@@ -869,6 +1004,7 @@ void PoseGraph::loadPoseGraph()
     base_sequence = 0;
 }
 
+#ifndef NO_ROS
 void PoseGraph::publish()
 {
     for (int i = 1; i <= sequence_cnt; i++)
@@ -884,6 +1020,7 @@ void PoseGraph::publish()
     pub_base_path.publish(base_path);
     //posegraph_visualization->publish_by(pub_pose_graph, path[sequence_cnt].header);
 }
+#endif
 
 void PoseGraph::updateKeyFrameLoop(int index, Eigen::Matrix<double, 8, 1 > &_loop_info)
 {

@@ -2,14 +2,21 @@
 
 #include "parameters.h"
 #include "feature_manager.h"
+#ifndef NO_ROS
 #include "utility/utility.h"
 #include "utility/tic_toc.h"
+#else
+#include "common/utility.h"
+#include "common/tic_toc.h"
+#endif
 #include "initial/solve_5pts.h"
 #include "initial/initial_sfm.h"
 #include "initial/initial_alignment.h"
 #include "initial/initial_ex_rotation.h"
+#ifndef NO_ROS
 #include <std_msgs/Header.h>
 #include <std_msgs/Float32.h>
+#endif
 
 #include <ceres/ceres.h>
 #include "factor/imu_factor.h"
@@ -32,7 +39,11 @@ class Estimator
 
     // interface
     void processIMU(double t, const Vector3d &linear_acceleration, const Vector3d &angular_velocity);
+#ifndef NO_ROS    
     void processImage(const map<int, vector<pair<int, Eigen::Matrix<double, 7, 1>>>> &image, const std_msgs::Header &header);
+#else
+    void processImage(const map<int, vector<pair<int, Eigen::Matrix<double, 7, 1> > > > &image, const double header);
+#endif    
     void setReloFrame(double _frame_stamp, int _frame_index, vector<Vector3d> &_match_points, Vector3d _relo_t, Matrix3d _relo_r);
 
     // internal
@@ -80,9 +91,13 @@ class Estimator
 
     Matrix3d back_R0, last_R, last_R0;
     Vector3d back_P0, last_P, last_P0;
+#ifndef NO_ROS  
     std_msgs::Header Headers[(WINDOW_SIZE + 1)];
+#else
+    double Headers[(WINDOW_SIZE + 1)];
+#endif
 
-    IntegrationBase *pre_integrations[(WINDOW_SIZE + 1)];
+    IntegrationBase *pre_integrations[(WINDOW_SIZE + 1)] = { nullptr };
     Vector3d acc_0, gyr_0;
 
     vector<double> dt_buf[(WINDOW_SIZE + 1)];
@@ -116,11 +131,11 @@ class Estimator
 
     int loop_window_index;
 
-    MarginalizationInfo *last_marginalization_info;
+    MarginalizationInfo *last_marginalization_info = nullptr;
     vector<double *> last_marginalization_parameter_blocks;
 
     map<double, ImageFrame> all_image_frame;
-    IntegrationBase *tmp_pre_integration;
+    IntegrationBase *tmp_pre_integration = nullptr;
 
     //relocalization variable
     bool relocalization_info;

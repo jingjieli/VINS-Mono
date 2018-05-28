@@ -1,14 +1,21 @@
 #pragma once
 
+#ifndef NO_ROS
 #include <ros/ros.h>
 #include <ros/console.h>
+#endif 
 #include <cstdlib>
 #include <pthread.h>
 #include <ceres/ceres.h>
 #include <unordered_map>
 
+#ifndef NO_ROS
 #include "../utility/utility.h"
 #include "../utility/tic_toc.h"
+#else
+#include "common/utility.h"
+#include "common/tic_toc.h"
+#endif
 
 const int NUM_THREADS = 4;
 

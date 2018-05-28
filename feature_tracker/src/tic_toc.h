@@ -1,3 +1,4 @@
+#ifndef NO_ROS
 #pragma once
 
 #include <ctime>
@@ -27,3 +28,5 @@ class TicToc
   private:
     std::chrono::time_point<std::chrono::system_clock> start, end;
 };
+
+#endif

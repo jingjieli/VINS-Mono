@@ -18,6 +18,7 @@ int FOCAL_LENGTH;
 int FISHEYE;
 bool PUB_THIS_FRAME;
 
+#ifndef NO_ROS
 template <typename T>
 T readParam(ros::NodeHandle &n, std::string name)
 {
@@ -72,3 +73,4 @@ void readParameters(ros::NodeHandle &n)
 
 
 }
+#endif

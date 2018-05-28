@@ -1,7 +1,12 @@
 #pragma once
 
+#ifndef NO_ROS
 #include "../utility/utility.h"
 #include "../parameters.h"
+#else 
+#include "global_parameters.h"
+#include "common/utility.h"
+#endif 
 
 #include <ceres/ceres.h>
 using namespace Eigen;
