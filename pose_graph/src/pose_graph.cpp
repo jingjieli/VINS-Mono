@@ -253,6 +253,7 @@ void PoseGraph::addKeyFrame(KeyFrame* cur_kf, bool flag_detect_loop, VIEstimator
     publish();
 #else 
     assert(visualizer_ptr != nullptr);
+    visualizer_ptr->resetPoseGraph();
     for (int i = 1; i <= sequence_cnt; i++)
     {
         if (1 || i == base_sequence)
@@ -807,6 +808,7 @@ void PoseGraph::updatePath(Visualizer* vis_ptr)
     publish();
 #else 
     assert(visualizer_ptr != nullptr);
+    visualizer_ptr->resetPoseGraph();
     for (int i = 1; i <= sequence_cnt; i++)
     {
         if (1 || i == base_sequence)

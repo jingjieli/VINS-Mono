@@ -222,15 +222,13 @@ void Visualizer::updatePoseGraph(const std::vector<POSE_MSG> &path)
 
 void Visualizer::updatePoseGraphPath(const std::vector<POSE_MSG> &path)
 {
-    render_mtx.lock();
-    pose_graph_traj.clear();
     for (const auto &pose_msg : path)
     {
         Eigen::Vector3d P = Eigen::Vector3d(pose_msg.position_x, pose_msg.position_y, pose_msg.position_z);
-
+        render_mtx.lock();
         pose_graph_traj.push_back(P);
+        render_mtx.unlock();
     }
-    render_mtx.unlock();
 }
 
 void Visualizer::resetPoseGraph()
