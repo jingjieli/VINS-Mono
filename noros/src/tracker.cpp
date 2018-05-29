@@ -36,22 +36,21 @@ void Tracker::init()
         trackerData[i]->readIntrinsicParameter(CAM_NAMES[i]);
     }
 
-    // FIX ME
-    // if(FISHEYE)
-    // {
-    //     for (int i = 0; i < NUM_OF_CAM; i++)
-    //     {
-    //         trackerData[i]->fisheye_mask = cv::imread(FISHEYE_MASK, 0);
-    //         if(!trackerData[i]->fisheye_mask.data)
-    //         {
-    //             printf("load mask fail\n");
-    //         }
-    //         else
-    //         {
-    //             printf("load mask success\n");
-    //         }
-    //     }
-    // }
+    if(FISHEYE)
+    {
+        for (int i = 0; i < NUM_OF_CAM; i++)
+        {
+            trackerData[i]->fisheye_mask = cv::imread(FISHEYE_MASK, 0);
+            if(!trackerData[i]->fisheye_mask.data)
+            {
+                printf("load mask fail\n");
+            }
+            else
+            {
+                printf("load mask success\n");
+            }
+        }
+    }
 }
 
 void Tracker::setVIEstimator(VIEstimator* estimator_ptr)

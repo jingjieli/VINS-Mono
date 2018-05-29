@@ -178,6 +178,9 @@ void Visualizer::updateTrajectory(const POSE_MSG &pose_msg)
 
 void Visualizer::prepareGroundTruth(const POSE_MSG &pose_msg)
 {
+    if (benchmark.size() == 0)
+        return;
+
     if (pose_msg.timestamp > benchmark.back().t)
         return;
 
@@ -474,6 +477,9 @@ void Visualizer::drawGroundTruth()
 
 void Visualizer::drawGroundTruthCamera()
 {
+    if (benchmark.size() == 0) // no ground truth loaded
+        return;
+
     pangolin::OpenGlMatrix benchmark_twc;
     render_mtx.lock();
     benchmark_twc = benchmark_Twc;

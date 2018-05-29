@@ -26,6 +26,7 @@ extern int SHOW_TRACK;
 extern bool STEREO_TRACK;
 extern int EQUALIZE;
 extern int FISHEYE;
+extern std::string FISHEYE_MASK;
 extern bool PUB_THIS_FRAME;
 
 // -----------------------

@@ -13,7 +13,7 @@ class VISystem
 public:
     VISystem();
     ~VISystem();
-    void init();
+    void init(const std::string &config_file);
     void quit();
     bool readParameters(std::string config_file);
     void processFrame(double img_timestamp, cv::Mat &input_frame);

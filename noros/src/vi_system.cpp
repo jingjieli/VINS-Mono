@@ -55,9 +55,9 @@ VISystem::~VISystem()
     visualizer = nullptr;
 }
 
-void VISystem::init()
+void VISystem::init(const std::string &config_file)
 {
-    if (tracker && vi_estimator && relocalizer && readParameters("../config/euroc_config.yaml"))
+    if (tracker && vi_estimator && relocalizer && readParameters(config_file))
     {
         tracker->init();
         vi_estimator->init();
@@ -121,9 +121,8 @@ bool VISystem::readParameters(std::string config_file)
     SHOW_TRACK = vi_config["show_track"];
     EQUALIZE = vi_config["equalize"];
     FISHEYE = vi_config["fisheye"];
-    // FIX ME
-    // if (FISHEYE == 1)
-    //     FISHEYE_MASK = VINS_FOLDER_PATH + "config/fisheye_mask.jpg";
+    if (FISHEYE == 1)
+        FISHEYE_MASK = "../config/fisheye_mask.jpg";
 
     CAM_NAMES.push_back(config_file);
 

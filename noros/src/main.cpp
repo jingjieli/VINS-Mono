@@ -29,9 +29,9 @@ std::vector<long> euroc_timestamp_storage;
 
 int main(int argc, char** argv)
 {
-    if (argc != 1) 
+    if (argc != 2) 
     {
-        std::cerr << "Usage: ./vi_executor" << std::endl;
+        std::cerr << "Usage: ./vi_executor config_file" << std::endl;
         return 0;
     }
 
@@ -60,7 +60,7 @@ int main(int argc, char** argv)
         const std::string euroc_dataset_path = dataset_path + "/cam0/data.csv";
         const std::string euroc_imu_path = dataset_path + "/imu0/data.csv";
 
-        const std::string euroc_groundtruth_path = dataset_path + "state_groundtruth_estimate0/data.csv";
+        const std::string euroc_groundtruth_path = dataset_path + "/state_groundtruth_estimate0/data.csv";
 
         imu_storage.clear();
 
@@ -76,7 +76,7 @@ int main(int argc, char** argv)
         {
             vi_system = new VISystem();
 
-            vi_system->init();
+            vi_system->init(argv[1]);
 
         }
 
@@ -88,7 +88,7 @@ int main(int argc, char** argv)
             
             //std::cout << "Image path: " << img_path << "\n";
             
-            cv::Mat input_frame = cv::imread(img_path, CV_LOAD_IMAGE_UNCHANGED);
+            cv::Mat input_frame = cv::imread(img_path, CV_LOAD_IMAGE_GRAYSCALE);
 
             if (input_frame.cols == 0 || input_frame.rows == 0) continue;
             
@@ -104,20 +104,18 @@ int main(int argc, char** argv)
                 break;
         }
 
-        int key = cv::waitKey(0);
-
-        if (key == 'q')
-        {
-            cv::destroyWindow("frame");
-            break;
-        }
-
         read_imu_thread.join();
 
         printf("[main] read_imu_thread stops\n");
 
         idx++;
 
+    }
+
+    int key = cv::waitKey(0);
+    if (key == 'q') 
+    {
+        cv::destroyWindow("frame");
     }
 
     vi_system->quit();

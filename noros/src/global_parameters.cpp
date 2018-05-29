@@ -15,6 +15,7 @@ int SHOW_TRACK;
 bool STEREO_TRACK;
 int EQUALIZE;
 int FISHEYE;
+std::string FISHEYE_MASK = "";
 bool PUB_THIS_FRAME;
 
 // -----------------------
