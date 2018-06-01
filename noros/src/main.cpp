@@ -84,19 +84,24 @@ int main(int argc, char** argv)
 
         for (size_t i = 0; i < euroc_timestamp_storage.size(); ++i)
         {
-            const std::string img_path(dataset_path + "/cam0/data/" + std::to_string(euroc_timestamp_storage[i]) + ".png");
+            std::vector<cv::Mat> input_frames;
+            for (unsigned int j = 0; j < NUM_OF_CAM; ++j)
+            {
+                const std::string img_path(dataset_path + "/cam" + std::to_string(j) + "/data/" + std::to_string(euroc_timestamp_storage[i]) + ".png");
+                //std::cout << "Image path: " << img_path << "\n";
             
-            //std::cout << "Image path: " << img_path << "\n";
-            
-            cv::Mat input_frame = cv::imread(img_path, CV_LOAD_IMAGE_GRAYSCALE);
+                cv::Mat input_frame = cv::imread(img_path, CV_LOAD_IMAGE_GRAYSCALE);
 
-            if (input_frame.cols == 0 || input_frame.rows == 0) continue;
-            
-            //std::cout << "Image w: " << input_frame.cols << " h: " << input_frame.rows << "\n";
+                if (input_frame.cols == 0 || input_frame.rows == 0) continue;
+                
+                //std::cout << "Image w: " << input_frame.cols << " h: " << input_frame.rows << "\n";
 
-            vi_system->processFrame(euroc_timestamp_storage[i] / pow(10, 9), input_frame);
+                input_frames.push_back(input_frame);
+            }
 
-            cv::imshow("frame", input_frame);
+            vi_system->processFrame(euroc_timestamp_storage[i] / pow(10, 9), input_frames);
+
+            cv::imshow("frame", input_frames[0]);
 
             int key = cv::waitKey(1);
 

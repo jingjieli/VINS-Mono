@@ -69,8 +69,10 @@ void Tracker::setRelocalizer(Relocalizer* relocalizer)
     }
 }
   
-void Tracker::processFrame(double img_timestamp, cv::Mat &input_frame)
+void Tracker::processFrame(double img_timestamp, std::vector<cv::Mat> &input_frames)
 {
+    assert(input_frames.size() == NUM_OF_CAM);
+
     if (first_image_flag)
     {
         first_image_flag = false;
@@ -114,7 +116,23 @@ void Tracker::processFrame(double img_timestamp, cv::Mat &input_frame)
 
     for (int i = 0; i < NUM_OF_CAM; i++)
     {
-        trackerData[i]->readImage(input_frame, img_timestamp);
+        printf("processing camera %d\n", i);
+        if (i != 1 || !STEREO_TRACK)
+        {
+            trackerData[i]->readImage(input_frames[i], img_timestamp);
+        }
+        else 
+        {
+            if (EQUALIZE)
+            {
+                cv::Ptr<cv::CLAHE> clahe = cv::createCLAHE();
+                clahe->apply(input_frames[i], trackerData[i]->cur_img);
+            }
+            else 
+            {
+                trackerData[i]->cur_img = input_frames[i];
+            }
+        }
     }
 
 #ifdef SHOW_UNDISTORTION
@@ -134,14 +152,14 @@ void Tracker::processFrame(double img_timestamp, cv::Mat &input_frame)
     if (PUB_THIS_FRAME)
     {
         pub_count++;
-        publishFrame(img_timestamp, input_frame);
-        visualizeTracking(input_frame);
+        publishFrame(img_timestamp, input_frames);
+        visualizeTracking(input_frames);
     }
 
     printf("whole feature tracker processing costs: %lf\n", t_r.toc());
 }
 
-void Tracker::publishFrame(double img_timestamp, cv::Mat &input_frame)
+void Tracker::publishFrame(double img_timestamp, std::vector<cv::Mat> &input_frames)
 {
     IMG_MSG img_msg;
     img_msg.timestamp = img_timestamp;
@@ -189,7 +207,7 @@ void Tracker::publishFrame(double img_timestamp, cv::Mat &input_frame)
 
         assert(relocalizer_ptr != nullptr);
         FRAME_MSG frame_msg;
-        cv::Mat reloc_frame = input_frame.clone();
+        cv::Mat reloc_frame = input_frames[0].clone();
         frame_msg.timestamp = img_timestamp;
         frame_msg.frame = reloc_frame;
         relocalizer_ptr->prepareFrame(frame_msg);
@@ -201,19 +219,19 @@ void Tracker::publishFrame(double img_timestamp, cv::Mat &input_frame)
 
 }
 
-void Tracker::visualizeTracking(cv::Mat &input_frame)
+void Tracker::visualizeTracking(std::vector<cv::Mat> &input_frames)
 {
     for (int i = 0; i < NUM_OF_CAM; i++)
     {
-        if (input_frame.channels() == 1) 
+        if ((input_frames[i]).channels() == 1) 
         {
-            cv::cvtColor(input_frame, input_frame, CV_GRAY2RGBA);
+            cv::cvtColor(input_frames[i], input_frames[i], CV_GRAY2RGBA);
         }
 
         for (unsigned int j = 0; j < trackerData[i]->cur_pts.size(); j++)
         {
             double len = std::min(1.0, 1.0 * trackerData[i]->track_cnt[j] / 20);
-            cv::circle(input_frame, trackerData[i]->cur_pts[j], 2, cv::Scalar(255 * (1 - len), 0, 255 * len), 2);
+            cv::circle(input_frames[i], trackerData[i]->cur_pts[j], 2, cv::Scalar(255 * (1 - len), 0, 255 * len), 2);
             
             //draw speed line
             Vector2d tmp_cur_un_pts (trackerData[i]->cur_un_pts[j].x, trackerData[i]->cur_un_pts[j].y);
@@ -223,11 +241,11 @@ void Tracker::visualizeTracking(cv::Mat &input_frame)
             tmp_prev_un_pts.z() = 1;
             Vector2d tmp_prev_uv;
             trackerData[i]->m_camera->spaceToPlane(tmp_prev_un_pts, tmp_prev_uv);
-            cv::line(input_frame, trackerData[i]->cur_pts[j], cv::Point2f(tmp_prev_uv.x(), tmp_prev_uv.y()), cv::Scalar(255 , 0, 0), 1 , 8, 0);
+            cv::line(input_frames[i], trackerData[i]->cur_pts[j], cv::Point2f(tmp_prev_uv.x(), tmp_prev_uv.y()), cv::Scalar(255 , 0, 0), 1 , 8, 0);
             
             char name[10];
             sprintf(name, "%d", trackerData[i]->ids[j]);
-            cv::putText(input_frame, name, trackerData[i]->cur_pts[j], cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0));
+            cv::putText(input_frames[i], name, trackerData[i]->cur_pts[j], cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 0));
         }
     }
 }

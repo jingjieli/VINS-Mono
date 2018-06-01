@@ -6,34 +6,8 @@
 
 #include "global_parameters.h"
 #include "feature_tracker.h"
-// #include "vi_estimator.h"
-// #include "relocalizer.h"
 
 using namespace std;
-
-// struct FEATURE_POINT
-// {
-//     float id_of_point;
-//     float u_of_point;
-//     float v_of_point;
-//     float velocity_x_of_point;
-//     float velocity_y_of_point;
-//     float undistorted_x;
-//     float undistorted_y;
-//     float undistorted_z;
-// };
-
-// struct IMG_MSG
-// {
-//     double timestamp;
-//     std::vector<FEATURE_POINT> features;
-// }; 
-
-// struct FRAME_MSG
-// {
-//     double timestamp;
-//     cv::Mat frame;
-// };
 
 class VIEstimator;
 class Relocalizer;
@@ -46,7 +20,7 @@ public:
     void init();
     void setVIEstimator(VIEstimator* estimator_ptr);
     void setRelocalizer(Relocalizer* relocalizer);
-    void processFrame(double img_timestamp, cv::Mat &input_frame);
+    void processFrame(double img_timestamp, std::vector<cv::Mat> &input_frames);
 private:
     bool first_image_flag = true;
     double first_image_time = 0.0, last_image_time = 0.0;
@@ -56,6 +30,6 @@ private:
     VIEstimator* vi_estimator_ptr = nullptr;
     Relocalizer* relocalizer_ptr = nullptr;
 
-    void publishFrame(double img_timestamp,  cv::Mat &input_frame);
-    void visualizeTracking(cv::Mat &input_frame);
+    void publishFrame(double img_timestamp, std::vector<cv::Mat> &input_frames);
+    void visualizeTracking(std::vector<cv::Mat> &input_frames);
 };

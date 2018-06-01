@@ -12,7 +12,7 @@ int MIN_DIST;
 int FREQ;
 double F_THRESHOLD;
 int SHOW_TRACK;
-bool STEREO_TRACK;
+int STEREO_TRACK;
 int EQUALIZE;
 int FISHEYE;
 std::string FISHEYE_MASK = "";

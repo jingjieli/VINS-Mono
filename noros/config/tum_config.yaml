@@ -89,3 +89,4 @@ skip_first_cnt: 10
 
 save_no_loop_path: 0
 save_loop_path: 0
+stereo_track: 0

@@ -23,7 +23,7 @@ extern int MIN_DIST;
 extern int FREQ;
 extern double F_THRESHOLD;
 extern int SHOW_TRACK;
-extern bool STEREO_TRACK;
+extern int STEREO_TRACK;
 extern int EQUALIZE;
 extern int FISHEYE;
 extern std::string FISHEYE_MASK;

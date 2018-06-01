@@ -126,7 +126,7 @@ bool VISystem::readParameters(std::string config_file)
 
     CAM_NAMES.push_back(config_file);
 
-    STEREO_TRACK = false;
+    STEREO_TRACK = vi_config["stereo_track"];
     PUB_THIS_FRAME = false;
 
     if (FREQ == 0)
@@ -235,11 +235,11 @@ bool VISystem::readParameters(std::string config_file)
     return true;
 }
 
-void VISystem::processFrame(double img_timestamp, cv::Mat &input_frame)
+void VISystem::processFrame(double img_timestamp, std::vector<cv::Mat> &input_frames)
 {
     if (tracker)
     {
-        tracker->processFrame(img_timestamp, input_frame);
+        tracker->processFrame(img_timestamp, input_frames);
     }
 }
 

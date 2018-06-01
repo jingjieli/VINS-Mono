@@ -11,23 +11,6 @@
 
 #include "common/tic_toc.h"
 #include "global_parameters.h"
-// #include "keyframe.h"
-// #include "pose_graph.h"
-//#include "vi_estimator.h"
-
-// struct POSE_MSG
-// {
-//     double timestamp;
-//     double position_x;
-//     double position_y;
-//     double position_z;
-//     double orientation_w;
-//     double orientation_x;
-//     double orientation_y;
-//     double orientation_z;
-//     double linear_x;
-//     int linear_y;
-// };
 
 class KeyFrame;
 class PoseGraph;

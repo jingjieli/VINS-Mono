@@ -16,7 +16,7 @@ public:
     void init(const std::string &config_file);
     void quit();
     bool readParameters(std::string config_file);
-    void processFrame(double img_timestamp, cv::Mat &input_frame);
+    void processFrame(double img_timestamp, std::vector<cv::Mat> &input_frames);
     void processImu(const IMU_MSG &imu_msg);
 private:
     Tracker* tracker = nullptr;
