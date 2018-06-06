@@ -7,6 +7,8 @@ class Tracker;
 class VIEstimator;
 class Relocalizer;
 class Visualizer;
+class Mapper;
+class ChiselNode;
 
 class VISystem 
 {
@@ -23,6 +25,8 @@ private:
     VIEstimator* vi_estimator = nullptr;
     Relocalizer* relocalizer = nullptr;
     Visualizer* visualizer = nullptr;
+    Mapper* mapper = nullptr;
+    ChiselNode* chisel_node = nullptr;
 
     std::thread tracker_thread;
     std::thread estimator_thread;

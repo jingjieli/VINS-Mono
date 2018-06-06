@@ -1,6 +1,7 @@
 #include "tracker.h"
 #include "vi_estimator.h"
 #include "relocalizer.h"
+#include "mapper.h"
 
 Tracker::Tracker()
 {
@@ -66,6 +67,14 @@ void Tracker::setRelocalizer(Relocalizer* relocalizer)
     if (relocalizer)
     {
         relocalizer_ptr = relocalizer;
+    }
+}
+
+void Tracker::setMapper(Mapper* mapper)
+{
+    if (mapper)
+    {
+        mapper_ptr = mapper;
     }
 }
   
@@ -211,6 +220,9 @@ void Tracker::publishFrame(double img_timestamp, std::vector<cv::Mat> &input_fra
         frame_msg.timestamp = img_timestamp;
         frame_msg.frame = reloc_frame;
         relocalizer_ptr->prepareFrame(frame_msg);
+
+        assert(mapper_ptr != nullptr);
+        mapper_ptr->prepareFrame(frame_msg);
     }
 
     // FIX ME: publish match

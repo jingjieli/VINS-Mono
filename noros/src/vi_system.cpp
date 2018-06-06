@@ -3,6 +3,8 @@
 #include "vi_estimator.h"
 #include "relocalizer.h"
 #include "visualizer.h"
+#include "mapper.h"
+#include "chisel_node.h"
 
 VISystem::VISystem()
 {
@@ -24,6 +26,16 @@ VISystem::VISystem()
     if (!visualizer)
     {
         visualizer = new Visualizer();
+    }
+
+    if (!mapper)
+    {
+        mapper = new Mapper();
+    }
+
+    if (!chisel_node)
+    {
+        chisel_node = new ChiselNode();
     }
 }
 
@@ -49,10 +61,22 @@ VISystem::~VISystem()
         delete visualizer;
     }
 
+    if (mapper)
+    {
+        delete mapper;
+    }
+
+    if (chisel_node)
+    {
+        delete chisel_node;
+    }
+
     tracker = nullptr;
     vi_estimator = nullptr;
     relocalizer = nullptr;
     visualizer = nullptr;
+    mapper = nullptr;
+    chisel_node = nullptr;
 }
 
 void VISystem::init(const std::string &config_file)
@@ -63,12 +87,18 @@ void VISystem::init(const std::string &config_file)
         vi_estimator->init();
         relocalizer->init();
         visualizer->init();
+        mapper->init();
+        chisel_node->init();
 
         tracker->setVIEstimator(vi_estimator);
         tracker->setRelocalizer(relocalizer);
+        tracker->setMapper(mapper);
 
         vi_estimator->setRelocalizer(relocalizer);
         vi_estimator->setVisualizer(visualizer);
+        vi_estimator->setMapper(mapper);
+
+        mapper->setChiselNode(chisel_node);
 
         relocalizer->setVIEstimator(vi_estimator);
         relocalizer->setVisualizer(visualizer);
@@ -190,11 +220,11 @@ bool VISystem::readParameters(std::string config_file)
     VINS_RESULT_NO_LOOP_PATH = VINS_RESULT_PATH + "/vins_result_no_loop.csv";
     VINS_RESULT_LOOP_PATH = VINS_RESULT_PATH + "/vins_result_loop.csv";
 
-    std::ofstream fout(VINS_RESULT_NO_LOOP_PATH, std::ios::out);
-    fout.close();
+    // std::ofstream fout = std::ofstream(VINS_RESULT_NO_LOOP_PATH, std::ios::out);
+    // fout.close();
 
-    fout = std::ofstream(VINS_RESULT_LOOP_PATH, std::ios::out);
-    fout.close();
+    // fout = std::ofstream(VINS_RESULT_LOOP_PATH, std::ios::out);
+    // fout.close();
 
     ESTIMATE_EXTRINSIC = vi_config["estimate_extrinsic"];
     if (ESTIMATE_EXTRINSIC == 2)

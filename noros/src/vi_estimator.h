@@ -16,6 +16,7 @@ using namespace std;
 
 class Relocalizer;
 class Visualizer;
+class Mapper;
 
 class VIEstimator 
 {
@@ -25,6 +26,7 @@ public:
     void init();
     void setRelocalizer(Relocalizer* reloc_ptr);
     void setVisualizer(Visualizer* vis_ptr);
+    void setMapper(Mapper* mapper);
     void prepareFeatures(const IMG_MSG &img_msg); // passed from tracker
     void prepareImu(const IMU_MSG &imu_msg); // passed from imu reader
     void prepareRolocalizationResult(const RELOC_MSG &reloc_msg); // passed from pose graph
@@ -68,6 +70,8 @@ private:
     Relocalizer* relocalizer_ptr = nullptr;
 
     Visualizer* visualizer_ptr = nullptr;
+
+    Mapper* mapper_ptr = nullptr;
 
     std::thread measurement_process;
 

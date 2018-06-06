@@ -1,6 +1,7 @@
 #include "vi_estimator.h"
 #include "relocalizer.h"
 #include "visualizer.h"
+#include "mapper.h"
 
 VIEstimator::VIEstimator()
 {
@@ -46,6 +47,14 @@ void VIEstimator::setVisualizer(Visualizer* vis_ptr)
     if (vis_ptr)
     {
         visualizer_ptr = vis_ptr;
+    }
+}
+
+void VIEstimator::setMapper(Mapper* mapper)
+{
+    if (mapper)
+    {
+        mapper_ptr = mapper;
     }
 }
 
@@ -595,27 +604,43 @@ void VIEstimator::pubLatestOdometry(const Eigen::Vector3d &P, const Eigen::Quate
 void VIEstimator::pubCameraPose(double timestamp)
 {
     assert(visualizer_ptr != nullptr);
+    assert(mapper_ptr != nullptr);
 
     if (estimator->solver_flag == Estimator::SolverFlag::NON_LINEAR)
     {
-        int i = WINDOW_SIZE - 1;
-        Vector3d P = estimator->Ps[i] + estimator->Rs[i] * estimator->tic[0];
-        Quaterniond Q = Quaterniond(estimator->Rs[i] * estimator->ric[0]);
-        Matrix3d R = Q.toRotationMatrix();
+        int idx1 = WINDOW_SIZE - 1;
+        Eigen::Vector3d P_curr = estimator->Ps[idx1] + estimator->Rs[idx1] * estimator->tic[0];
+        Eigen::Quaterniond Q_curr = Quaterniond(estimator->Rs[idx1] * estimator->ric[0]);
+        Eigen::Matrix3d R_curr = Q_curr.toRotationMatrix();
 
-        // POSE_MSG pose_msg;
+        visualizer_ptr->updateCameraPose(P_curr, R_curr);
 
-        // pose_msg.timestamp = timestamp;
-        // pose_msg.position_x = P.x();
-        // pose_msg.position_y = P.y();
-        // pose_msg.position_z = P.z();
-        // pose_msg.orientation_x = R.x();
-        // pose_msg.orientation_y = R.y();
-        // pose_msg.orientation_z = R.z();
-        // pose_msg.orientation_w = R.w();
+        POSE_MSG curr_pose;
+        curr_pose.timestamp = timestamp;
+        curr_pose.position_x = P_curr.x();
+        curr_pose.position_y = P_curr.y();
+        curr_pose.position_z = P_curr.z();
+        curr_pose.orientation_x = Q_curr.x();
+        curr_pose.orientation_y = Q_curr.y();
+        curr_pose.orientation_z = Q_curr.z();
+        curr_pose.orientation_w = Q_curr.w();
 
-        // visualizer_ptr->updateCameraPose(pose_msg);
-        visualizer_ptr->updateCameraPose(P, R);
+        int idx2 = WINDOW_SIZE - 2;
+        Vector3d P_ref = estimator->Ps[idx2] + estimator->Rs[idx2] * estimator->tic[0];
+        Quaterniond Q_ref = Quaterniond(estimator->Rs[idx2] * estimator->ric[0]);
+        //Matrix3d R_ref = Q_ref.toRotationMatrix();
+
+        POSE_MSG ref_pose;
+        ref_pose.timestamp = timestamp;
+        ref_pose.position_x = P_ref.x();
+        ref_pose.position_y = P_ref.y();
+        ref_pose.position_z = P_ref.z();
+        ref_pose.orientation_x = Q_ref.x();
+        ref_pose.orientation_y = Q_ref.y();
+        ref_pose.orientation_z = Q_ref.z();
+        ref_pose.orientation_w = Q_ref.w();
+
+        mapper_ptr->updateCurrentAndRefPose(curr_pose, ref_pose);
     }
 }
 

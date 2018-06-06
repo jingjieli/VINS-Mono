@@ -61,3 +61,13 @@ std::string POSE_GRAPH_SAVE_PATH = "";
 std::string VINS_RESULT_PATH = "";
 std::string VINS_RESULT_NO_LOOP_PATH = "";
 std::string VINS_RESULT_LOOP_PATH = "";
+
+// *********** mapper *************
+float pi1 = 16;
+float pi2 = 64;
+float tau_so = 8;
+float sgm_q1 = 1;
+float sgm_q2 = 1;
+int sgm_iter = 1;
+float var_scale = 1.0f;
+int var_width = 0;
